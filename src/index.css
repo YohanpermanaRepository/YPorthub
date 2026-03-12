@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+ --color-primary-rgb: 17 17 27;          /* #11111B – Gelap berkarakter */
+  --color-secondary-rgb: 35 35 55;        /* #232337 – Abu-ungu lembut */
+  --color-accent-rgb: 99 102 241;         /* #6366F1 – Indigo modern */
+  --color-light-text-rgb: 245 245 255;    /* #F5F5FF – Putih kebiruan */
+  --color-dark-text-rgb: 165 165 190;     /* #A5A5BE – Abu ungu netral */
+}
+
+/* Scroll Animation */
+.scroll-animate {
+    opacity: 0;
+    transition: opacity 0.8s cubic-bezier(0.17, 0.55, 0.55, 1) 0.2s, transform 0.8s cubic-bezier(0.17, 0.55, 0.55, 1) 0.2s;
+}
+
+.scroll-animate.fade-in {
+    transform: scale(0.98);
+}
+
+.scroll-animate.fade-in-up {
+    transform: translateY(40px);
+}
+
+.scroll-animate.is-visible {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+}
+
+/* Animated Gradient Text */
+.animated-gradient {
+    background-image: linear-gradient(
+        -225deg,
+        rgb(var(--color-accent-rgb)) 0%,
+        #4776E6 29%,
+        #8E54E9 67%,
+        rgb(var(--color-accent-rgb)) 100%
+    );
+    background-size: 200% auto;
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: textclip 3s linear infinite;
+    display: inline-block;
+}
+
+@keyframes textclip {
+    to {
+        background-position: 200% center;
+    }
+}
+
+/* Card hover effect */
+.interactive-card {
+    transition: transform 0.3s ease-out, box-shadow 0.3s ease-out;
+}
+.interactive-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+}
+.dark .interactive-card:hover {
+    box-shadow: 0 20px 25px -5px rgb(var(--color-primary-rgb) / 0.5), 0 8px 10px -6px rgb(var(--color-primary-rgb) / 0.5);
+}
+
+/* Button active effect */
+button, .button-like {
+    transition: transform 0.1s ease-out !important;
+}
+button:active, .button-like:active {
+    transform: scale(0.95);
+}
+
+/* Scrolled Navbar */
+nav.scrolled {
+    background-color: rgb(255 255 255 / 0.95);
+}
+.dark nav.scrolled {
+    background-color: rgb(var(--color-secondary-rgb) / 0.85);
+}
