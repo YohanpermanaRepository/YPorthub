@@ -41,7 +41,7 @@ const CertificationManager: React.FC = () => {
     else setFormData(initialFormData);
   }, [editingCert]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
 
     setFormData(prev => ({
@@ -51,6 +51,9 @@ const CertificationManager: React.FC = () => {
         : value
     }));
   };
+
+  const uniqueCategories = Array.from(new Set(certifications.map(c => c.category))).sort();
+  const uniqueIssuers = Array.from(new Set(certifications.map(c => c.issuer))).sort();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -169,23 +172,59 @@ const CertificationManager: React.FC = () => {
                 className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
               />
 
-              <input
-                name="issuer"
-                value={formData.issuer}
-                onChange={handleInputChange}
-                placeholder="Issuer"
-                required
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
-              />
+              <div>
+                <label className="block text-sm text-gray-300 mb-1">Issuer</label>
+                {uniqueIssuers.length > 0 ? (
+                  <select
+                    name="issuer"
+                    value={formData.issuer}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                  >
+                    <option value="">-- Select or type new --</option>
+                    {uniqueIssuers.map(issuer => (
+                      <option key={issuer} value={issuer}>{issuer}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    name="issuer"
+                    value={formData.issuer}
+                    onChange={handleInputChange}
+                    placeholder="Enter issuer"
+                    required
+                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                )}
+              </div>
 
-              <input
-                name="category"
-                value={formData.category}
-                onChange={handleInputChange}
-                placeholder="Category"
-                required
-                className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
-              />
+              <div>
+                <label className="block text-sm text-gray-300 mb-1">Category</label>
+                {uniqueCategories.length > 0 ? (
+                  <select
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                  >
+                    <option value="">-- Select or type new --</option>
+                    {uniqueCategories.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    name="category"
+                    value={formData.category}
+                    onChange={handleInputChange}
+                    placeholder="Enter category"
+                    required
+                    className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white"
+                  />
+                )}
+              </div>
 
               <input
                 name="year"
