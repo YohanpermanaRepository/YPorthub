@@ -9,6 +9,8 @@ import ContactManager from '../components/ContactManager';
 import AccountManager from '../components/AccountManager';
 import TechnologyManager from '../components/TechnologyManager';
 
+import { User, FileText, Phone, Briefcase, Folder, GraduationCap, Award, Settings } from "lucide-react";
+
 interface DashboardPageProps {
   onLogout: () => void;
   authInfo: { username: string; role: string } | null;
@@ -38,16 +40,16 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout, authInfo }) => 
     }
   };
 
-  const navItems: Array<{ name: ManagedSection; icon: string; color: string }> = [
-    { name: 'Profile', icon: '👤', color: 'from-white-500 to-navy-600' },
-    { name: 'About', icon: '📝', color: 'from-purple-500 to-purple-600' },
-    { name: 'Contact', icon: '📞', color: 'from-pink-500 to-pink-600' },
-    { name: 'Experience', icon: '💼', color: 'from-emerald-500 to-emerald-600' },
-    { name: 'Projects', icon: '🚀', color: 'from-indigo-500 to-indigo-600' },
-    { name: 'Education', icon: '🎓', color: 'from-orange-500 to-orange-600' },
-    { name: 'Certifications', icon: '🏆', color: 'from-red-500 to-red-600' },
-    { name: 'Technologies', icon: '⚙️', color: 'from-cyan-500 to-cyan-600' },
-  ];
+  const navItems: Array<{ name: ManagedSection; icon: React.ReactNode }> = [
+  { name: 'Profile', icon: <User className="w-5 h-5" /> },
+  { name: 'About', icon: <FileText className="w-5 h-5" /> },
+  { name: 'Contact', icon: <Phone className="w-5 h-5" /> },
+  { name: 'Experience', icon: <Briefcase className="w-5 h-5" /> },
+  { name: 'Projects', icon: <Folder className="w-5 h-5" /> },
+  { name: 'Education', icon: <GraduationCap className="w-5 h-5" /> },
+  { name: 'Certifications', icon: <Award className="w-5 h-5" /> },
+  { name: 'Technologies', icon: <Settings className="w-5 h-5" /> },
+];
 
   return (
     <div className="flex h-screen bg-gray-900">
@@ -101,9 +103,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout, authInfo }) => 
               key={item.name}
               onClick={() => setActiveSection(item.name)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group ${
-                activeSection === item.name
-                  ? `bg-gradient-to-r ${item.color} text-white shadow-lg`
-                  : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              activeSection === item.name
+              ? "bg-gray-600 text-white shadow-lg"
+              : "text-gray-300 hover:bg-gray-700 hover:text-white"
               }`}
               title={item.name}
             >

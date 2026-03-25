@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import type { ContactData } from '../types';
 import { API_BASE_URL } from '../config';
+import { Loader2 } from "lucide-react";
 
 const ContactManager: React.FC = () => {
     const [contact, setContact] = useState<ContactData | null>(null);
@@ -81,7 +82,13 @@ const ContactManager: React.FC = () => {
         }
     };
 
-    if (isLoading) return <p className="text-white">Loading contact info...</p>;
+    if (isLoading) {
+    return (
+        <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
+        </div>
+    );
+    }
 
     return (
         <div className="bg-navy-900 text-white p-8 rounded-lg shadow">
@@ -111,7 +118,7 @@ const ContactManager: React.FC = () => {
                         onChange={handleInputChange}
                         placeholder="Email"
                         required
-                        className="w-full p-2 border border-gray-300 bg-white text-black rounded"
+                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition"
                     />
 
                     <input
@@ -120,7 +127,7 @@ const ContactManager: React.FC = () => {
                         onChange={handleInputChange}
                         placeholder="LinkedIn URL"
                         required
-                        className="w-full p-2 border border-gray-300 bg-white text-black rounded"
+                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition"
                     />
 
                     <input
@@ -129,7 +136,7 @@ const ContactManager: React.FC = () => {
                         onChange={handleInputChange}
                         placeholder="Instagram URL"
                         required
-                        className="w-full p-2 border border-gray-300 bg-white text-black rounded"
+                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition"
                     />
 
                     <input
@@ -138,7 +145,7 @@ const ContactManager: React.FC = () => {
                         onChange={handleInputChange}
                         placeholder="YouTube URL"
                         required
-                        className="w-full p-2 border border-gray-300 bg-white text-black rounded"
+                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition"
                     />
 
                     <textarea
@@ -148,7 +155,7 @@ const ContactManager: React.FC = () => {
                         placeholder="Contact Description"
                         required
                         rows={3}
-                        className="w-full p-2 border border-gray-300 bg-white text-black rounded"
+                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition"
                     />
 
                     <div className="text-right">

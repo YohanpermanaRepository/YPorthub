@@ -3,6 +3,17 @@ import type { Project, Technology } from '../types';
 import ReactCrop, { type Crop, type PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { API_BASE_URL } from '../config';
+import {
+  Scissors,
+  Rocket,
+  Upload,
+  Trash2,
+  Pencil,
+  Star,
+  XCircle,
+  Loader2,
+  ImagePlus
+} from "lucide-react";
 
 type ProjectFormState = Omit<Project, 'id' | 'technologies' | 'demoLink' | 'videoUrl'> & {
     technologies: string[];
@@ -312,7 +323,7 @@ const ProjectManager: React.FC = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-[100] p-4 backdrop-blur-sm">
                     <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-700">
                         <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                            <span>✂️</span>
+                            <Scissors className="w-5 h-5 text-gray-300" />
                             Crop Project Image
                         </h3>
                         <p className="text-gray-400 text-sm mb-6">Optionally crop the image, or upload it in full resolution.</p>
@@ -350,7 +361,7 @@ const ProjectManager: React.FC = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 backdrop-blur-sm">
                     <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
                         <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                            <span>🚀</span>
+                            <Rocket className="w-6 h-6 text-gray-300" />
                             {editingProject ? 'Edit' : 'Add'} Project
                         </h3>
                         <form onSubmit={handleSubmit} className="space-y-6">
@@ -443,7 +454,11 @@ const ProjectManager: React.FC = () => {
                                                 onChange={(e) => onSelectFile(e, index)}
                                             />
                                             <button type="button" onClick={() => fileInputRefs.current[index]?.click()} className="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-3 py-2 rounded-lg transition-colors disabled:opacity-50" disabled={uploadingImageIndex === index}>
-                                                {uploadingImageIndex === index ? '⏳' : '📤'}
+                                              {uploadingImageIndex === index ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                <Upload className="w-4 h-4" />
+                                                )}
                                             </button>
                                             <button type="button" onClick={() => handleRemoveImage(index)} className="text-red-400 hover:text-red-300 font-semibold px-3 py-2 rounded-lg transition-colors">🗑️</button>
                                         </div>
@@ -453,7 +468,7 @@ const ProjectManager: React.FC = () => {
 
                             <label className="flex items-center gap-3 text-gray-200 cursor-pointer hover:text-white transition">
                                 <input type="checkbox" name="isFeatured" checked={formData.isFeatured} onChange={handleInputChange} className="w-4 h-4 rounded bg-gray-700 border border-gray-600"/>
-                                <span className="font-medium">⭐ Mark as Featured Project</span>
+                                <span className="font-medium"> Mark as Featured Project</span>
                             </label>
 
                             <div className="flex justify-end gap-3 pt-6 border-t border-gray-600">
@@ -469,7 +484,6 @@ const ProjectManager: React.FC = () => {
                 <div className="flex items-center justify-between mb-8">
                     <div>
                         <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
-                            <span>🚀</span>
                             Projects
                         </h2>
                         <p className="text-gray-400">Showcase your best work</p>
@@ -494,7 +508,7 @@ const ProjectManager: React.FC = () => {
                                 <div className="flex-1">
                                     <div className="flex items-center gap-2 mb-1">
                                         <h3 className="text-xl font-bold text-white">{p.title}</h3>
-                                        {p.isFeatured && <span className="text-xl">⭐</span>}
+                                        {p.isFeatured && <span className="text-xl"></span>}
                                     </div>
                                     <p className="text-gray-300 text-sm mb-3">{p.description}</p>
                                     <div className="flex flex-wrap gap-2">
@@ -506,8 +520,21 @@ const ProjectManager: React.FC = () => {
                                 </div>
                             </div>
                             <div className="flex gap-3 mt-4 pt-4 border-t border-gray-600">
-                                <button onClick={() => openForm(p)} className="text-blue-400 hover:text-blue-300 font-medium text-sm transition-colors">✏️ Edit</button>
-                                <button onClick={() => handleDelete(p.id)} className="text-red-400 hover:text-red-300 font-medium text-sm transition-colors">🗑️ Delete</button>
+                            <button
+                                onClick={() => openForm(p)}
+                                className="flex items-center gap-1 text-blue-400 hover:text-blue-300 font-medium text-sm transition-colors"
+                            >
+                                <Pencil size={16} />
+                                Edit
+                            </button>
+
+                            <button
+                                onClick={() => handleDelete(p.id)}
+                                className="flex items-center gap-1 text-red-400 hover:text-red-300 font-medium text-sm transition-colors"
+                            >
+                                <Trash2 size={16} />
+                                Delete
+                            </button>
                             </div>
                         </div>
                     ))}

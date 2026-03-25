@@ -3,6 +3,16 @@ import type { ProfileData } from '../types';
 import ReactCrop, { type Crop, type PixelCrop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { API_BASE_URL } from '../config';
+import { Loader2 } from "lucide-react";
+
+import { 
+  User, 
+  Scissors, 
+  XCircle, 
+  CheckCircle, 
+  Upload, 
+  Save 
+} from "lucide-react";
 
 // Helper function to generate a cropped image file from a canvas
 function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<File> {
@@ -174,15 +184,13 @@ const ProfileManager: React.FC = () => {
         } catch (err) { setError((err as Error).message); }
     };
 
-    if (isLoading) return (
-        <div className="p-12 flex items-center justify-center">
-            <div className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-navy-500 to-indigo-600 rounded-full animate-spin mb-4">
-                </div>
-                <p className="text-gray-300">Loading profile...</p>
-            </div>
+   if (isLoading) {
+    return (
+        <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 text-gray-400 animate-spin" />
         </div>
     );
+    }
 
     return (
         <div>
@@ -190,7 +198,7 @@ const ProfileManager: React.FC = () => {
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4 backdrop-blur-sm">
                     <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
                         <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                            <span>✂️</span>
+                            <Scissors className="w-5 h-5" />
                             Crop Your Profile Picture
                         </h3>
                         {upImg && (
@@ -236,7 +244,7 @@ const ProfileManager: React.FC = () => {
                 {/* Header */}
                 <div className="mb-8">
                     <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
-                        <span>👤</span>
+                        <User className="w-6 h-6" />
                         Manage Profile
                     </h2>
                     <p className="text-gray-400">Update your profile information and picture</p>
@@ -245,13 +253,13 @@ const ProfileManager: React.FC = () => {
                 {/* Alerts */}
                 {error && (
                     <div className="mb-6 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-50 rounded-lg p-4 flex items-center gap-3">
-                        <span>❌</span>
+                        <XCircle className="w-5 h-5 text-red-400" />
                         <p className="text-red-200">{error}</p>
                     </div>
                 )}
                 {success && (
                     <div className="mb-6 bg-emerald-500 bg-opacity-10 border border-emerald-500 border-opacity-50 rounded-lg p-4 flex items-center gap-3">
-                        <span>✅</span>
+                        <CheckCircle className="w-5 h-5 text-emerald-400" />
                         <p className="text-emerald-200">{success}</p>
                     </div>
                 )}
@@ -309,7 +317,12 @@ const ProfileManager: React.FC = () => {
                                             className="bg-gradient-to-r from-navy-500 to-indigo-600 hover:from-navy-600 hover:to-indigo-700 text-white font-semibold px-4 py-2 rounded-lg transition-all disabled:opacity-50 whitespace-nowrap" 
                                             disabled={isUploading}
                                         >
-                                            {isUploading ? 'Uploading...' : '📤 Upload'}
+                                            {isUploading ? 'Uploading...' : (
+                                            <>
+                                                <Upload className="w-4 h-4" />
+                                                Upload
+                                            </>
+                                            )}
                                         </button>
                                     </div>
                                     <p className="text-xs text-gray-400">Click upload to select an image from your device</p>
@@ -339,7 +352,7 @@ const ProfileManager: React.FC = () => {
                                 type="submit" 
                                 className="bg-gradient-to-r from-navy-500 to-indigo-600 hover:from-navy-600 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
                             >
-                                <span>💾</span>
+                                <Save className="w-5 h-5" />
                                 Save Changes
                             </button>
                         </div>
