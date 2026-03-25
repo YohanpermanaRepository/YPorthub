@@ -1,4 +1,16 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import {
+    BookOpen,
+    Plus,
+    Pencil,
+    Trash2,
+    Upload,
+    X,
+    Loader2,
+    AlertCircle,
+    CheckCircle2,
+    GraduationCap
+} from 'lucide-react';
 import type { EducationData, Publication, Achievement } from '../types';
 import { API_BASE_URL } from '../config';
 
@@ -11,6 +23,7 @@ const initialFormData: Omit<EducationData, 'id'> = {
 const EducationManager: React.FC = () => {
     const [educations, setEducations] = useState<EducationData[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingEducation, setEditingEducation] = useState<EducationData | null>(null);
@@ -90,6 +103,7 @@ const EducationManager: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
         const token = localStorage.getItem('authToken');
         if (!token) return setError("Authentication error.");
 
@@ -110,6 +124,7 @@ const EducationManager: React.FC = () => {
             await fetchEducations();
             closeForm();
         } catch (err) { setError((err as Error).message); }
+        finally { setIsSubmitting(false); }
     };
 
     const handleDelete = async (id: number) => {
@@ -127,101 +142,222 @@ const EducationManager: React.FC = () => {
         } catch (err) { setError((err as Error).message); }
     };
     
-    const openForm = (edu: EducationData | null = null) => { setEditingEducation(edu); setIsFormOpen(true); };
-    const closeForm = () => { setEditingEducation(null); setIsFormOpen(false); setError(null); };
+    const openForm = (edu: EducationData | null = null) => { 
+        setEditingEducation(edu); 
+        setIsFormOpen(true); 
+    };
+    
+    const closeForm = () => { 
+        setEditingEducation(null); 
+        setIsFormOpen(false); 
+        setError(null); 
+    };
 
     return (
-        <div className="bg-white p-8 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Manage Education</h2>
-                <button onClick={() => openForm()} className="bg-accent text-white font-bold py-2 px-4 rounded-lg hover:bg-opacity-80">Add New</button>
+        <div className="p-6 md:p-8">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h2 className="text-3xl font-bold text-white flex items-center gap-3">
+                        <GraduationCap className="text-navy-400" size={32} />
+                        Education Manager
+                    </h2>
+                    <p className="text-gray-400">Track your academic achievements and qualifications</p>
+                </div>
+                <button 
+                    onClick={() => openForm()}
+                    className="flex items-center justify-center gap-2 bg-navy-600 hover:bg-navy-500 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg active:scale-95"
+                >
+                    <Plus size={20} />
+                    Add Education
+                </button>
             </div>
-            {isLoading && <p>Loading...</p>}
-            {error && <p className="text-red-500 bg-red-100 p-3 rounded-md my-4">{error}</p>}
+
+            {/* Error Message */}
+            {error && (
+                <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-xl p-4 flex items-center gap-3 text-red-200">
+                    <AlertCircle size={20} />
+                    <p>{error}</p>
+                    <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200"><X size={18} /></button>
+                </div>
+            )}
+
+            {/* Main List */}
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+                    <Loader2 className="animate-spin mb-4" size={40} />
+                    <p>Loading education...</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 gap-4">
+                    {educations.map(edu => (
+                        <div key={edu.id} className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 hover:border-gray-600 transition-all group">
+                            <div className="flex flex-col md:flex-row gap-6">
+                                <div className="w-16 h-16 rounded-xl bg-gray-700 flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-600">
+                                    {edu.logo ? (
+                                        <img src={edu.logo} alt={edu.institution} className="w-full h-full object-cover" />
+                                    ) : (
+                                        <BookOpen className="text-gray-500" size={30} />
+                                    )}
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h3 className="text-xl font-bold text-white group-hover:text-navy-400 transition-colors">{edu.degree}</h3>
+                                            <p className="text-gray-300 font-medium">@ {edu.institution}</p>
+                                            <p className="text-gray-400 text-sm mt-1">{edu.major} {edu.gpa ? `• GPA: ${edu.gpa}` : ''}</p>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => { setEditingEducation(edu); setIsFormOpen(true); }} className="p-2 bg-gray-700 hover:bg-navy-600 text-gray-300 hover:text-white rounded-lg transition-colors">
+                                                <Pencil size={18} />
+                                            </button>
+                                            <button onClick={() => handleDelete(edu.id)} className="p-2 bg-gray-700 hover:bg-red-600 text-gray-300 hover:text-white rounded-lg transition-colors">
+                                                <Trash2 size={18} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <p className="text-gray-400 text-sm mt-3">{edu.startDate} — {edu.endDate}</p>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    
+                    {educations.length === 0 && (
+                        <div className="text-center py-20 bg-gray-800/30 border border-dashed border-gray-700 rounded-3xl">
+                            <GraduationCap className="mx-auto text-gray-600 mb-4" size={48} />
+                            <p className="text-gray-400 italic">No education data available.</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Form Modal */}
             {isFormOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                    <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-xl font-bold mb-6">{editingEducation ? 'Edit' : 'Add'} Education</h3>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            {/* Main fields */}
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+                    <div className="bg-gray-900 border border-gray-700 p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+                                {editingEducation ? <Pencil className="text-navy-400" /> : <Plus className="text-navy-400" />}
+                                {editingEducation ? 'Edit' : 'Add'} Education
+                            </h3>
+                            <button onClick={closeForm} className="text-gray-400 hover:text-white transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <input name="institution" value={formData.institution} onChange={handleInputChange} placeholder="Institution" required className="w-full p-2 border rounded"/>
                                 <div>
-                                    <label htmlFor="logo" className="sr-only">Logo URL</label>
-                                    <div className="flex items-center gap-2">
-                                    <input id="logo" name="logo" value={formData.logo} onChange={handleInputChange} placeholder="Logo URL" required className="w-full p-2 border rounded"/>
-                                        <input 
-                                            type="file"
-                                            accept="image/*"
-                                            className="hidden"
-                                            ref={fileInputRef}
-                                            onChange={(e) => e.target.files && handleLogoUpload(e.target.files[0])}
-                                        />
-                                        <button type="button" onClick={() => fileInputRef.current?.click()} className="text-sm bg-gray-600 text-white font-semibold px-3 py-2 rounded-lg hover:bg-gray-700 disabled:bg-gray-400" disabled={isUploading}>
-                                            {isUploading ? '...' : 'Upload'}
-                                        </button>
+                                    <label className="block text-sm font-semibold text-gray-300 mb-2">Institution</label>
+                                    <input name="institution" value={formData.institution} onChange={handleInputChange} placeholder="e.g., University of Computer Science" required className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"/>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-300 mb-2">Degree</label>
+                                    <input name="degree" value={formData.degree} onChange={handleInputChange} placeholder="e.g., Bachelor of Science" required className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"/>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-300 mb-2">Major</label>
+                                    <input name="major" value={formData.major} onChange={handleInputChange} placeholder="e.g., Computer Science" required className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"/>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-300 mb-2">GPA</label>
+                                    <input name="gpa" type="number" step="0.01" value={formData.gpa} onChange={handleInputChange} placeholder="e.g., 3.8" required className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"/>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-300 mb-2">Predicate</label>
+                                    <input name="predicate" value={formData.predicate} onChange={handleInputChange} placeholder="e.g., Cum Laude" required className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"/>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-300 mb-2">Scholarship</label>
+                                    <input name="scholarship" value={formData.scholarship || ''} onChange={handleInputChange} placeholder="e.g., Full Tuition (Optional)" className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"/>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-300 mb-2">Institution Logo</label>
+                                <div className="flex items-center gap-3">
+                                    <div className="flex-1 relative">
+                                        <input name="logo" value={formData.logo} onChange={handleInputChange} placeholder="Logo URL" required className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition pr-10"/>
+                                        {formData.logo && <CheckCircle2 className="absolute right-3 top-3 text-emerald-500" size={18} />}
+                                    </div>
+                                    <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={(e) => e.target.files && handleLogoUpload(e.target.files[0])} />
+                                    <button type="button" onClick={() => fileInputRef.current?.click()} className="p-3 bg-gray-700 hover:bg-gray-600 text-white rounded-xl transition-all disabled:opacity-50" disabled={isUploading}>
+                                        {isUploading ? <Loader2 className="animate-spin" size={20} /> : <Upload size={20} />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-800/50 rounded-2xl p-5 border border-gray-700">
+                                <label className="block text-sm font-semibold text-gray-300 mb-4">Duration</label>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1.5 ml-1">Start Date</label>
+                                        <input name="startDate" value={formData.startDate} onChange={handleInputChange} placeholder="2020-01-01" required className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white outline-none focus:border-navy-500 transition"/>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-gray-400 mb-1.5 ml-1">End Date</label>
+                                        <input name="endDate" value={formData.endDate} onChange={handleInputChange} placeholder="2024-06-30" required className="w-full px-4 py-2 bg-gray-900 border border-gray-700 rounded-lg text-white outline-none focus:border-navy-500 transition"/>
                                     </div>
                                 </div>
-                                <input name="degree" value={formData.degree} onChange={handleInputChange} placeholder="Degree" required className="w-full p-2 border rounded"/>
-                                <input name="major" value={formData.major} onChange={handleInputChange} placeholder="Major" required className="w-full p-2 border rounded"/>
-                                <input name="gpa" type="number" step="0.01" value={formData.gpa} onChange={handleInputChange} placeholder="GPA" required className="w-full p-2 border rounded"/>
-                                <input name="predicate" value={formData.predicate} onChange={handleInputChange} placeholder="Predicate" required className="w-full p-2 border rounded"/>
-                                <input name="startDate" value={formData.startDate} onChange={handleInputChange} placeholder="Start Date" required className="w-full p-2 border rounded"/>
-                                <input name="endDate" value={formData.endDate} onChange={handleInputChange} placeholder="End Date" required className="w-full p-2 border rounded"/>
-                                <input name="scholarship" value={formData.scholarship || ''} onChange={handleInputChange} placeholder="Scholarship (Optional)" className="w-full p-2 border rounded md:col-span-2"/>
-                                <input name="transcriptLink" value={formData.transcriptLink} onChange={handleInputChange} placeholder="Transcript Link" required className="w-full p-2 border rounded md:col-span-2"/>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-300 mb-2">Transcript Link</label>
+                                <input name="transcriptLink" value={formData.transcriptLink} onChange={handleInputChange} placeholder="https://..." required className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"/>
                             </div>
                             
-                            <hr className="my-6"/>
-                            <h4 className="font-bold">Publications</h4>
+                            <hr className="border-gray-700"/>
+                            <h4 className="font-bold text-white text-lg">Publications</h4>
                             {formData.publications.map((p, i) => (
-                                <div key={i} className="p-3 border rounded space-y-2 bg-gray-50 relative">
-                                    <input value={p.title} onChange={e => handleDepChange(i, 'title', e.target.value, 'publications')} placeholder="Title" className="w-full p-2 border rounded"/>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                                        <input value={p.authors} onChange={e => handleDepChange(i, 'authors', e.target.value, 'publications')} placeholder="Authors" className="w-full p-2 border rounded"/>
-                                        <input value={p.publisher} onChange={e => handleDepChange(i, 'publisher', e.target.value, 'publications')} placeholder="Publisher" className="w-full p-2 border rounded"/>
-                                        <input value={p.index} onChange={e => handleDepChange(i, 'index', e.target.value, 'publications')} placeholder="Index (e.g., SINTA 2)" className="w-full p-2 border rounded"/>
-                                        <input type="number" value={p.year} onChange={e => handleDepChange(i, 'year', parseInt(e.target.value) || new Date().getFullYear(), 'publications')} placeholder="Year" className="w-full p-2 border rounded"/>
+                                <div key={i} className="p-4 border border-gray-700 rounded-xl space-y-3 bg-gray-800/30">
+                                    <div className="flex justify-between items-start gap-3 mb-2">
+                                        <input value={p.title} onChange={e => handleDepChange(i, 'title', e.target.value, 'publications')} placeholder="Title" className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white outline-none focus:border-navy-500 transition"/>
+                                        <button type="button" onClick={() => removeDep(i, 'publications')} className="text-gray-400 hover:text-red-400 font-bold text-xl transition-colors flex-shrink-0">&times;</button>
                                     </div>
-                                    <input value={p.link || ''} onChange={e => handleDepChange(i, 'link', e.target.value, 'publications')} placeholder="Link (Optional)" className="w-full p-2 border rounded"/>
-                                    <button type="button" onClick={() => removeDep(i, 'publications')} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <input value={p.authors} onChange={e => handleDepChange(i, 'authors', e.target.value, 'publications')} placeholder="Authors" className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white outline-none focus:border-navy-500 transition"/>
+                                        <input value={p.publisher} onChange={e => handleDepChange(i, 'publisher', e.target.value, 'publications')} placeholder="Publisher" className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white outline-none focus:border-navy-500 transition"/>
+                                        <input value={p.index} onChange={e => handleDepChange(i, 'index', e.target.value, 'publications')} placeholder="Index (e.g., SINTA 2)" className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white outline-none focus:border-navy-500 transition"/>
+                                        <input type="number" value={p.year} onChange={e => handleDepChange(i, 'year', parseInt(e.target.value) || new Date().getFullYear(), 'publications')} placeholder="Year" className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white outline-none focus:border-navy-500 transition"/>
+                                    </div>
+                                    <input value={p.link || ''} onChange={e => handleDepChange(i, 'link', e.target.value, 'publications')} placeholder="Link (Optional)" className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white outline-none focus:border-navy-500 transition"/>
                                 </div>
                             ))}
-                            <button type="button" onClick={() => addDep('publications')} className="text-accent text-sm font-semibold">+ Add Publication</button>
+                            <button type="button" onClick={() => addDep('publications')} className="text-white text-sm font-semibold flex items-center gap-1 hover:text-gray-200 transition-colors">
+                                <Plus size={16} /> Add Publication
+                            </button>
                             
-                            <hr className="my-6"/>
-                            <h4 className="font-bold">Achievements</h4>
+                            <hr className="border-gray-700"/>
+                            <h4 className="font-bold text-white text-lg">Achievements</h4>
                             {formData.achievements.map((a, i) => (
-                                <div key={i} className="p-3 border rounded space-y-2 bg-gray-50 relative">
-                                    <input value={a.description} onChange={e => handleDepChange(i, 'description', e.target.value, 'achievements')} placeholder="Description" className="w-full p-2 border rounded"/>
-                                    <input value={a.link || ''} onChange={e => handleDepChange(i, 'link', e.target.value, 'achievements')} placeholder="Link (Optional)" className="w-full p-2 border rounded"/>
-                                    <button type="button" onClick={() => removeDep(i, 'achievements')} className="absolute top-2 right-2 text-red-500 hover:text-red-700 font-bold text-xl">&times;</button>
+                                <div key={i} className="p-4 border border-gray-700 rounded-xl space-y-3 bg-gray-800/30">
+                                    <div className="flex justify-between items-start gap-3 mb-2">
+                                        <input value={a.description} onChange={e => handleDepChange(i, 'description', e.target.value, 'achievements')} placeholder="Description" className="flex-1 px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white outline-none focus:border-navy-500 transition"/>
+                                        <button type="button" onClick={() => removeDep(i, 'achievements')} className="text-gray-400 hover:text-red-400 font-bold text-xl transition-colors flex-shrink-0">&times;</button>
+                                    </div>
+                                    <input value={a.link || ''} onChange={e => handleDepChange(i, 'link', e.target.value, 'achievements')} placeholder="Link (Optional)" className="w-full px-4 py-2 bg-gray-800 border border-gray-700 rounded-lg text-white outline-none focus:border-navy-500 transition"/>
                                 </div>
                             ))}
-                            <button type="button" onClick={() => addDep('achievements')} className="text-accent text-sm font-semibold">+ Add Achievement</button>
+                            <button type="button" onClick={() => addDep('achievements')} className="text-white text-sm font-semibold flex items-center gap-1 hover:text-gray-200 transition-colors">
+                                <Plus size={16} /> Add Achievement
+                            </button>
 
-                            <div className="flex justify-end gap-4 pt-6">
-                                <button type="button" onClick={closeForm} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg hover:bg-gray-300">Cancel</button>
-                                <button type="submit" className="bg-accent text-white font-bold py-2 px-4 rounded-lg hover:bg-opacity-80">{editingEducation ? 'Update' : 'Save'}</button>
+                            <div className="flex gap-3 pt-6 border-t border-gray-800">
+                                <button type="button" onClick={closeForm} className="flex-1 py-3 px-6 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit" disabled={isSubmitting} className="flex-[2] py-3 px-6 bg-navy-600 hover:bg-navy-500 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50">
+                                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : null}
+                                    {editingEducation ? 'Update Education' : 'Save Education'}
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
-            <div className="space-y-4">
-                {educations.map(edu => (
-                    <div key={edu.id} className="p-4 border rounded-lg flex justify-between items-center hover:bg-gray-50">
-                        <div>
-                          <p className="font-bold text-lg">{edu.degree}</p>
-                          <p className="text-md text-gray-700">{edu.institution}</p>
-                        </div>
-                        <div className="space-x-4 flex-shrink-0">
-                            <button onClick={() => openForm(edu)} className="text-blue-600 hover:underline">Edit</button>
-                            <button onClick={() => handleDelete(edu.id)} className="text-red-600 hover:underline">Delete</button>
-                        </div>
-                    </div>
-                ))}
-            </div>
         </div>
     );
 };

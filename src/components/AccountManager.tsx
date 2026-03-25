@@ -1,4 +1,12 @@
 import React, { useState } from 'react';
+import {
+    Lock,
+    User,
+    Loader2,
+    AlertCircle,
+    CheckCircle2,
+    X
+} from 'lucide-react';
 import { API_BASE_URL } from '../config';
 
 const AccountManager: React.FC = () => {
@@ -71,79 +79,147 @@ const AccountManager: React.FC = () => {
     };
 
     return (
-        <div className="bg-white p-8 rounded-lg shadow max-w-2xl mx-auto">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Account Settings</h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-6">
-                <div>
-                    <h3 className="text-lg font-medium text-gray-900">Change Credentials</h3>
-                    <p className="mt-1 text-sm text-gray-600">
-                        Update your username or password. You must provide your current password to make any changes.
-                    </p>
-                </div>
-                
-                <div className="space-y-4">
-                     <div>
-                        <label htmlFor="newUsername" className="block text-sm font-medium text-gray-700">New Username (optional)</label>
-                        <input
-                            id="newUsername"
-                            type="text"
-                            value={newUsername}
-                            onChange={(e) => setNewUsername(e.target.value)}
-                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-accent focus:border-accent"
-                        />
-                    </div>
-                     <div>
-                        <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700">New Password (optional)</label>
-                        <input
-                            id="newPassword"
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-accent focus:border-accent"
-                        />
-                    </div>
-                     <div>
-                        <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">Confirm New Password</label>
-                        <input
-                            id="confirmPassword"
-                            type="password"
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-accent focus:border-accent"
-                        />
-                    </div>
-                </div>
+        <div className="p-6 md:p-8">
+            {/* Header Section */}
+            <div className="mb-8">
+                <h2 className="text-3xl font-bold text-white flex items-center gap-3 mb-2">
+                    <Lock className="text-navy-400" size={32} />
+                    Account Settings
+                </h2>
+                <p className="text-gray-400">Update your username or password</p>
+            </div>
 
-                <hr/>
-                
-                <div>
-                    <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700">
-                       Current Password (required to save changes)
-                    </label>
-                    <input
-                        id="currentPassword"
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        required
-                        className="mt-1 block w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-accent focus:border-accent"
-                    />
+            {/* Error Message */}
+            {error && (
+                <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-xl p-4 flex items-center gap-3 text-red-200">
+                    <AlertCircle size={20} />
+                    <p>{error}</p>
+                    <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200"><X size={18} /></button>
                 </div>
-                
-                {error && <p className="text-red-500 bg-red-100 p-3 rounded-md text-sm">{error}</p>}
-                {success && <p className="text-green-600 bg-green-100 p-3 rounded-md text-sm">{success}</p>}
-                
-                <div className="text-right">
-                    <button 
-                        type="submit" 
-                        disabled={isLoading}
-                        className="bg-accent text-white font-bold py-2 px-6 rounded-lg hover:bg-opacity-80 disabled:bg-gray-400"
-                    >
-                        {isLoading ? 'Saving...' : 'Save Changes'}
-                    </button>
+            )}
+
+            {/* Success Message */}
+            {success && (
+                <div className="mb-6 bg-emerald-500/10 border border-emerald-500/50 rounded-xl p-4 flex items-center gap-3 text-emerald-200">
+                    <CheckCircle2 size={20} />
+                    <p>{success}</p>
+                    <button onClick={() => setSuccess(null)} className="ml-auto text-emerald-400 hover:text-emerald-200"><X size={18} /></button>
                 </div>
-            </form>
+            )}
+            
+            <div className="bg-gray-900 border border-gray-700 rounded-3xl p-6 md:p-8 shadow-2xl max-w-2xl">
+                <form onSubmit={handleSubmit} className="space-y-8">
+                    {/* New Credentials Section */}
+                    <div>
+                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                            <User className="text-navy-400" size={24} />
+                            Change Credentials
+                        </h3>
+                        
+                        <div className="space-y-4">
+                            <div>
+                                <label htmlFor="newUsername" className="block text-sm font-semibold text-gray-300 mb-2">
+                                    New Username (optional)
+                                </label>
+                                <input
+                                    id="newUsername"
+                                    type="text"
+                                    value={newUsername}
+                                    onChange={(e) => setNewUsername(e.target.value)}
+                                    placeholder="Enter new username"
+                                    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="newPassword" className="block text-sm font-semibold text-gray-300 mb-2">
+                                    New Password (optional)
+                                </label>
+                                <input
+                                    id="newPassword"
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => setNewPassword(e.target.value)}
+                                    placeholder="Enter new password"
+                                    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"
+                                />
+                            </div>
+
+                            <div>
+                                <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-300 mb-2">
+                                    Confirm New Password
+                                </label>
+                                <input
+                                    id="confirmPassword"
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    placeholder="Confirm new password"
+                                    className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr className="border-gray-700"/>
+
+                    {/* Current Password Section */}
+                    <div>
+                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
+                            <Lock className="text-navy-400" size={24} />
+                            Verify Identity
+                        </h3>
+                        
+                        <label htmlFor="currentPassword" className="block text-sm font-semibold text-gray-300 mb-2">
+                            Current Password (required to save changes)
+                        </label>
+                        <input
+                            id="currentPassword"
+                            type="password"
+                            value={currentPassword}
+                            onChange={(e) => setCurrentPassword(e.target.value)}
+                            placeholder="Enter current password"
+                            required
+                            className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"
+                        />
+                        <p className="mt-2 text-xs text-gray-400">
+                            We need your current password to confirm any changes to your account.
+                        </p>
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 pt-6 border-t border-gray-700">
+                        <button 
+                            type="button"
+                            onClick={() => {
+                                setCurrentPassword('');
+                                setNewUsername('');
+                                setNewPassword('');
+                                setConfirmPassword('');
+                                setError(null);
+                                setSuccess(null);
+                            }}
+                            className="flex-1 py-3 px-6 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors"
+                        >
+                            Clear
+                        </button>
+                        <button 
+                            type="submit" 
+                            disabled={isLoading}
+                            className="flex-[2] py-3 px-6 bg-navy-600 hover:bg-navy-500 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <Loader2 className="animate-spin" size={20} />
+                                    Saving...
+                                </>
+                            ) : (
+                                'Save Changes'
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     );
 };

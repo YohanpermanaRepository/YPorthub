@@ -1,4 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import {
+    Zap,
+    Plus,
+    Pencil,
+    Trash2,
+    X,
+    Loader2,
+    AlertCircle,
+    Code2
+} from 'lucide-react';
 import { API_BASE_URL } from '../config';
 
 interface Technology {
@@ -10,6 +20,7 @@ interface Technology {
 const TechnologyManager: React.FC = () => {
     const [technologies, setTechnologies] = useState<Technology[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingTechnology, setEditingTechnology] = useState<Technology | null>(null);
@@ -54,6 +65,7 @@ const TechnologyManager: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsSubmitting(true);
         const token = localStorage.getItem('authToken');
         if (!token) return setError("Authentication error. Please log in again.");
 
@@ -77,6 +89,8 @@ const TechnologyManager: React.FC = () => {
             closeForm();
         } catch (err) {
             setError((err as Error).message);
+        } finally {
+            setIsSubmitting(false);
         }
     };
 
@@ -112,56 +126,117 @@ const TechnologyManager: React.FC = () => {
     };
 
     return (
-        <div className="bg-white p-8 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-800">Manage Technologies</h2>
-                <button onClick={() => openForm()} className="bg-accent text-white font-bold py-2 px-4 rounded-lg hover:bg-opacity-80">
-                    Add New
+        <div className="p-6 md:p-8">
+            {/* Header Section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                <div>
+                    <h2 className="text-3xl font-bold text-white flex items-center gap-3">
+                        <Zap className="text-navy-400" size={32} />
+                        Technology Manager
+                    </h2>
+                    <p className="text-gray-400">Manage your technical skills and tools</p>
+                </div>
+                <button 
+                    onClick={() => openForm()}
+                    className="flex items-center justify-center gap-2 bg-navy-600 hover:bg-navy-500 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg active:scale-95"
+                >
+                    <Plus size={20} />
+                    Add Technology
                 </button>
             </div>
 
-            {isLoading && <p>Loading...</p>}
-            
+            {/* Error Message */}
+            {error && (
+                <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-xl p-4 flex items-center gap-3 text-red-200">
+                    <AlertCircle size={20} />
+                    <p>{error}</p>
+                    <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200"><X size={18} /></button>
+                </div>
+            )}
+
+            {/* Main List */}
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+                    <Loader2 className="animate-spin mb-4" size={40} />
+                    <p>Loading technologies...</p>
+                </div>
+            ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {technologies.map(tech => (
+                        <div key={tech.id} className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 hover:border-gray-600 transition-all group">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="w-12 h-12 rounded-xl bg-gray-700 flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-600">
+                                    {tech.icon ? (
+                                        <img src={tech.icon} alt={tech.name} className="w-full h-full object-contain p-1" />
+                                    ) : (
+                                        <Code2 className="text-gray-500" size={24} />
+                                    )}
+                                </div>
+                                <div className="flex gap-2">
+                                    <button onClick={() => openForm(tech)} className="p-2 bg-gray-700 hover:bg-navy-600 text-gray-300 hover:text-white rounded-lg transition-colors">
+                                        <Pencil size={16} />
+                                    </button>
+                                    <button onClick={() => handleDelete(tech.id)} className="p-2 bg-gray-700 hover:bg-red-600 text-gray-300 hover:text-white rounded-lg transition-colors">
+                                        <Trash2 size={16} />
+                                    </button>
+                                </div>
+                            </div>
+                            <h3 className="text-lg font-bold text-white group-hover:text-navy-400 transition-colors">{tech.name}</h3>
+                        </div>
+                    ))}
+                    
+                    {technologies.length === 0 && (
+                        <div className="col-span-full text-center py-20 bg-gray-800/30 border border-dashed border-gray-700 rounded-3xl">
+                            <Zap className="mx-auto text-gray-600 mb-4" size={48} />
+                            <p className="text-gray-400 italic">No technologies found. Add one to get started!</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Form Modal */}
             {isFormOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-                    <div className="bg-white p-8 rounded-lg shadow-xl w-full max-w-lg">
-                        <h3 className="text-xl font-bold mb-4">{editingTechnology ? 'Edit' : 'Add'} Technology</h3>
-                         {error && <p className="text-red-500 bg-red-100 p-3 rounded-md my-4 text-sm">{error}</p>}
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <input name="name" value={formData.name} onChange={handleInputChange} placeholder="Technology Name (e.g., React)" required className="w-full p-2 border rounded"/>
-                            <input name="icon" value={formData.icon || ''} onChange={handleInputChange} placeholder="Icon URL (e.g., https://.../react.svg)" className="w-full p-2 border rounded"/>
-                            <div className="flex justify-end gap-4">
-                                <button type="button" onClick={closeForm} className="bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-lg">Cancel</button>
-                                <button type="submit" className="bg-accent text-white font-bold py-2 px-4 rounded-lg">{editingTechnology ? 'Update' : 'Save'}</button>
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center z-50 p-4">
+                    <div className="bg-gray-900 border border-gray-700 p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h3 className="text-2xl font-bold text-white flex items-center gap-3">
+                                {editingTechnology ? <Pencil className="text-navy-400" /> : <Plus className="text-navy-400" />}
+                                {editingTechnology ? 'Edit' : 'Add'} Technology
+                            </h3>
+                            <button onClick={closeForm} className="text-gray-400 hover:text-white transition-colors">
+                                <X size={24} />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-300 mb-2">Technology Name</label>
+                                <input name="name" value={formData.name} onChange={handleInputChange} placeholder="e.g., React, TypeScript" required className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"/>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-300 mb-2">Icon URL</label>
+                                <input name="icon" value={formData.icon || ''} onChange={handleInputChange} placeholder="https://..." className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"/>
+                                {formData.icon && (
+                                    <div className="mt-3 flex justify-center">
+                                        <img src={formData.icon} alt="Tech Icon Preview" className="w-12 h-12 object-contain" />
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="flex gap-3 pt-6 border-t border-gray-800">
+                                <button type="button" onClick={closeForm} className="flex-1 py-3 px-6 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors">
+                                    Cancel
+                                </button>
+                                <button type="submit" disabled={isSubmitting} className="flex-[2] py-3 px-6 bg-navy-600 hover:bg-navy-500 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50">
+                                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : null}
+                                    {editingTechnology ? 'Update Technology' : 'Save Technology'}
+                                </button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
-            
-            {error && !isFormOpen && <p className="text-red-500 bg-red-100 p-3 rounded-md my-4">{error}</p>}
-
-            <div className="space-y-4">
-                {technologies.map(tech => (
-                    <div key={tech.id} className="p-4 border rounded-lg flex justify-between items-center hover:bg-gray-50 transition-colors">
-                        <div className="flex items-center gap-4">
-                            {tech.icon ? (
-                                <img src={tech.icon} alt={tech.name} className="w-8 h-8 object-contain" />
-                            ) : (
-                                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center text-gray-500 text-xs">?</div>
-                            )}
-                            <p className="font-bold text-lg">{tech.name}</p>
-                        </div>
-                        <div className="space-x-4 flex-shrink-0">
-                            <button onClick={() => openForm(tech)} className="text-blue-600 hover:underline">Edit</button>
-                            <button onClick={() => handleDelete(tech.id)} className="text-red-600 hover:underline">Delete</button>
-                        </div>
-                    </div>
-                ))}
-                 {!isLoading && technologies.length === 0 && (
-                    <p className="text-center text-gray-500 py-4">No technologies found. Add one to get started!</p>
-                )}
-            </div>
         </div>
     );
 };

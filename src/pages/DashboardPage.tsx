@@ -9,7 +9,7 @@ import ContactManager from '../components/ContactManager';
 import AccountManager from '../components/AccountManager';
 import TechnologyManager from '../components/TechnologyManager';
 
-import { User, FileText, Phone, Briefcase, Folder, GraduationCap, Award, Settings } from "lucide-react";
+import { User, FileText, Phone, Briefcase, Folder, GraduationCap, Award, Settings, LogOut, ChevronRight, ChevronLeft, Lock } from "lucide-react";
 
 interface DashboardPageProps {
   onLogout: () => void;
@@ -73,13 +73,9 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout, authInfo }) => 
               className="text-gray-400 hover:text-white transition-colors"
             >
               {sidebarOpen ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                </svg>
+                <ChevronLeft className="w-5 h-5" />
               ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                </svg>
+                <ChevronRight className="w-5 h-5" />
               )}
             </button>
           </div>
@@ -88,7 +84,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout, authInfo }) => 
               <p className="font-medium text-white">Welcome, {username}!</p>
               {isReadOnly && (
                 <span className="inline-flex items-center gap-1 mt-2 bg-amber-500 bg-opacity-20 border border-amber-500 border-opacity-30 px-3 py-1 rounded-full text-xs font-medium text-amber-200">
-                  <span>🔒</span>
+                  <Lock className="w-3 h-3" />
                   Read-only
                 </span>
               )}
@@ -124,7 +120,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout, authInfo }) => 
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-200 ${!sidebarOpen && 'justify-center'}`}
             title="Account Settings"
           >
-            <span className="text-xl flex-shrink-0">⚙️</span>
+            <Settings className="w-5 h-5 flex-shrink-0" />
             {sidebarOpen && <span className="text-sm font-medium">Settings</span>}
           </button>
           <button
@@ -132,7 +128,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout, authInfo }) => 
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-red-500 hover:bg-opacity-20 hover:text-red-400 transition-all duration-200 ${!sidebarOpen && 'justify-center'}`}
             title="Logout"
           >
-            <span className="text-xl flex-shrink-0">🚪</span>
+            <LogOut className="w-5 h-5 flex-shrink-0" />
             {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
           </button>
         </div>
