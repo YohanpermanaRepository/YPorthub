@@ -87,5 +87,6 @@ export interface ContactData {
   instagram: string;
   youtube: string;
   linkedin: string;
+  whatsapp: string | null;
   description: string;
 }

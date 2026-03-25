@@ -148,6 +148,14 @@ const ContactManager: React.FC = () => {
                         className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition"
                     />
 
+                    <input
+                        name="whatsapp"
+                        value={contact.whatsapp || ''}
+                        onChange={handleInputChange}
+                        placeholder="WhatsApp Number (optional)"
+                        className="w-full px-4 py-3 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-navy-500 focus:ring-1 focus:ring-navy-500 transition"
+                    />
+
                     <textarea
                         name="description"
                         value={contact.description}
