@@ -79,40 +79,40 @@ const AccountManager: React.FC = () => {
     };
 
     return (
-        <div className="p-6 md:p-8">
+        <div className="p-4">
             {/* Header Section */}
-            <div className="mb-8">
-                <h2 className="text-3xl font-bold text-white flex items-center gap-3 mb-2">
-                    <Lock className="text-navy-400" size={32} />
+            <div className="mb-4">
+                <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-1">
+                    <Lock className="text-navy-400" size={24} />
                     Account Settings
                 </h2>
-                <p className="text-gray-400">Update your username or password</p>
+                <p className="text-gray-400 text-sm">Update your username or password</p>
             </div>
 
             {/* Error Message */}
             {error && (
-                <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-xl p-4 flex items-center gap-3 text-red-200">
-                    <AlertCircle size={20} />
-                    <p>{error}</p>
-                    <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200"><X size={18} /></button>
+                <div className="mb-3 bg-red-500/10 border border-red-500/50 rounded-lg p-2 flex items-center gap-2 text-red-200">
+                    <AlertCircle size={16} />
+                    <p className="text-sm flex-1">{error}</p>
+                    <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200"><X size={16} /></button>
                 </div>
             )}
 
             {/* Success Message */}
             {success && (
-                <div className="mb-6 bg-emerald-500/10 border border-emerald-500/50 rounded-xl p-4 flex items-center gap-3 text-emerald-200">
-                    <CheckCircle2 size={20} />
-                    <p>{success}</p>
-                    <button onClick={() => setSuccess(null)} className="ml-auto text-emerald-400 hover:text-emerald-200"><X size={18} /></button>
+                <div className="mb-3 bg-emerald-500/10 border border-emerald-500/50 rounded-lg p-2 flex items-center gap-2 text-emerald-200">
+                    <CheckCircle2 size={16} />
+                    <p className="text-sm flex-1">{success}</p>
+                    <button onClick={() => setSuccess(null)} className="ml-auto text-emerald-400 hover:text-emerald-200"><X size={16} /></button>
                 </div>
             )}
             
-            <div className="bg-gray-900 border border-gray-700 rounded-3xl p-6 md:p-8 shadow-2xl max-w-2xl">
-                <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="bg-gray-900 border border-gray-700 rounded-2xl p-4 shadow-2xl max-w-lg">
+                <form onSubmit={handleSubmit} className="space-y-4">
                     {/* New Credentials Section */}
                     <div>
-                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                            <User className="text-navy-400" size={24} />
+                        <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2">
+                            <User className="text-navy-400" size={18} />
                             Change Credentials
                         </h3>
                         
@@ -165,8 +165,8 @@ const AccountManager: React.FC = () => {
 
                     {/* Current Password Section */}
                     <div>
-                        <h3 className="text-xl font-bold text-white mb-6 flex items-center gap-2">
-                            <Lock className="text-navy-400" size={24} />
+                        <h3 className="text-base font-bold text-white mb-3 flex items-center gap-2">
+                            <Lock className="text-navy-400" size={18} />
                             Verify Identity
                         </h3>
                         
@@ -188,7 +188,7 @@ const AccountManager: React.FC = () => {
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex gap-3 pt-6 border-t border-gray-700">
+                    <div className="flex gap-2 pt-3 border-t border-gray-700">
                         <button 
                             type="button"
                             onClick={() => {
@@ -199,14 +199,14 @@ const AccountManager: React.FC = () => {
                                 setError(null);
                                 setSuccess(null);
                             }}
-                            className="flex-1 py-3 px-6 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors"
+                            className="flex-1 py-2 px-4 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors text-sm"
                         >
                             Clear
                         </button>
                         <button 
                             type="submit" 
                             disabled={isLoading}
-                            className="flex-[2] py-3 px-6 bg-navy-600 hover:bg-navy-500 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex-[2] py-2 px-4 bg-navy-600 hover:bg-navy-500 text-white font-bold rounded-lg transition-all shadow-lg flex items-center justify-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
                         >
                             {isLoading ? (
                                 <>

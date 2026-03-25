@@ -49,12 +49,12 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
       </div>
 
       {/* Main Container */}
-      <div className="w-full max-w-md relative z-10">
+      <div className="w-full max-w-sm relative z-10">
         {/* Logo & Branding */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-navy-500 to-indigo-600 rounded-xl shadow-lg mb-6">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-br from-navy-500 to-indigo-600 rounded-lg shadow-lg mb-3">
             <svg
-              className="w-8 h-8 text-white"
+              className="w-6 h-6 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -67,21 +67,20 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
               />
             </svg>
           </div>
-          <h1 className="text-4xl font-bold text-white mb-2">YPorthub</h1>
-          <p className="text-sm text-gray-400">Yohan Permana Portfolio Hub</p>
-          <p className="text-xs text-gray-500 mt-3">Professional Portfolio Management System</p>
+          <h1 className="text-2xl font-bold text-white mb-1">YPorthub</h1>
+          <p className="text-xs text-gray-400">Portfolio Management System</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-white bg-opacity-95 backdrop-blur-md rounded-2xl shadow-2xl p-8 mb-6">
+        <div className="bg-white bg-opacity-95 backdrop-blur-md rounded-2xl shadow-2xl p-4 mb-3">
           {/* Card Header */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back</h2>
-            <p className="text-sm text-gray-600">Sign in to manage your portfolio</p>
+          <div className="mb-4">
+            <h2 className="text-lg font-bold text-gray-900 mb-1">Welcome Back</h2>
+            <p className="text-xs text-gray-600">Sign in to manage your portfolio</p>
           </div>
 
           {/* Login Form */}
-          <form className="space-y-6" onSubmit={handleSubmit}>
+          <form className="space-y-3" onSubmit={handleSubmit}>
             {/* Username Field */}
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-2">
@@ -92,7 +91,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 name="username"
                 type="text"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-transparent transition"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-transparent transition text-sm"
                 placeholder="Enter your username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
@@ -101,7 +100,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-xs font-medium text-gray-700 mb-1">
                 Password
               </label>
               <input
@@ -109,7 +108,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
                 name="password"
                 type="password"
                 required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-transparent transition"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-navy-500 focus:border-transparent transition text-sm"
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -118,8 +117,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
 
             {/* Error Message */}
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                <p className="text-red-700 text-sm">{error}</p>
+              <div className="bg-red-50 border border-red-200 rounded-lg p-2">
+                <p className="text-red-700 text-xs">{error}</p>
               </div>
             )}
 
@@ -127,7 +126,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-navy-500 to-indigo-600 hover:from-navy-600 hover:to-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
+              className="w-full bg-gradient-to-r from-navy-500 to-indigo-600 hover:from-navy-600 hover:to-indigo-700 text-white font-semibold py-2 px-3 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-xl text-sm"
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
@@ -145,11 +144,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         </div>
 
         {/* Info Buttons */}
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setShowAboutModal(true)}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1 text-sm"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -159,7 +158,7 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
           <button
             type="button"
             onClick={() => setShowDemoModal(true)}
-            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-3 px-4 rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+            className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-medium py-2 px-3 rounded-lg transition-colors duration-200 flex items-center justify-center gap-1 text-sm"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -174,22 +173,22 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-navy-500 to-indigo-600 px-6 py-8">
+            <div className="bg-gradient-to-r from-navy-500 to-indigo-600 px-4 py-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white bg-opacity-20 rounded-full p-2">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2">
+                  <div className="bg-white bg-opacity-20 rounded-full p-1">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-white">Tentang YPorthub</h3>
+                  <h3 className="text-base font-bold text-white">Tentang YPorthub</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowAboutModal(false)}
                   className="text-white hover:text-gray-200 transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -197,8 +196,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </div>
 
             {/* Modal Content */}
-            <div className="px-6 py-8">
-              <div className="mb-6">
+            <div className="px-4 py-4">
+              <div className="mb-3">
                 <h4 className="text-lg font-bold text-gray-900 mb-3">🚀 Apa itu YPorthub?</h4>
                 <p className="text-gray-700 text-sm leading-relaxed mb-4">
                   YPorthub adalah sistem manajemen portfolio profesional yang dirancang khusus untuk menampilkan dan mengelola portofolio digital Anda dengan cara yang elegan dan efisien.
@@ -235,11 +234,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+            <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => setShowAboutModal(false)}
-                className="w-full bg-navy-600 hover:bg-navy-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                className="w-full bg-navy-600 hover:bg-navy-700 text-white font-semibold py-1 px-3 rounded-lg transition-colors text-sm"
               >
                 Tutup
               </button>
@@ -253,22 +252,22 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden transform transition-all">
             {/* Modal Header */}
-            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-6 py-8">
+            <div className="bg-gradient-to-r from-emerald-500 to-teal-600 px-4 py-4">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="bg-white bg-opacity-20 rounded-full p-2">
-                    <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="flex items-center gap-2">
+                  <div className="bg-white bg-opacity-20 rounded-full p-1">
+                    <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                   </div>
-                  <h3 className="text-xl font-bold text-white">Demo Account</h3>
+                  <h3 className="text-base font-bold text-white">Demo Akun</h3>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowDemoModal(false)}
                   className="text-white hover:text-gray-200 transition-colors"
                 >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
@@ -276,8 +275,8 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </div>
 
             {/* Modal Content */}
-            <div className="px-6 py-8">
-              <p className="text-gray-600 mb-6 text-sm leading-relaxed">
+            <div className="px-4 py-4">
+              <p className="text-gray-600 mb-3 text-xs leading-relaxed">
                 Selamat datang! Gunakan akun demo di bawah untuk mengeksplorasi fitur-fitur lengkap YPorthub. Akses read-only untuk preview dan testing sistem:
               </p>
 
@@ -344,11 +343,11 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
             </div>
 
             {/* Modal Footer */}
-            <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+            <div className="bg-gray-50 px-4 py-3 border-t border-gray-200">
               <button
                 type="button"
                 onClick={() => setShowDemoModal(false)}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors"
+                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1 px-3 rounded-lg transition-colors text-sm"
               >
                 Mari Mulai Explore
               </button>

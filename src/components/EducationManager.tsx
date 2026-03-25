@@ -154,19 +154,19 @@ const EducationManager: React.FC = () => {
     };
 
     return (
-        <div className="p-6 md:p-8">
+        <div className="p-4">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 mb-4">
                 <div>
-                    <h2 className="text-3xl font-bold text-white flex items-center gap-3">
-                        <GraduationCap className="text-navy-400" size={32} />
+                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                        <GraduationCap className="text-navy-400" size={24} />
                         Education Manager
                     </h2>
-                    <p className="text-gray-400">Track your academic achievements and qualifications</p>
+                    <p className="text-gray-400 text-sm">Track your academic achievements and qualifications</p>
                 </div>
                 <button 
                     onClick={() => openForm()}
-                    className="flex items-center justify-center gap-2 bg-navy-600 hover:bg-navy-500 text-white font-semibold py-3 px-6 rounded-xl transition-all shadow-lg active:scale-95"
+                    className="flex items-center justify-center gap-1 bg-navy-600 hover:bg-navy-500 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow-lg active:scale-95 text-sm"
                 >
                     <Plus size={20} />
                     Add Education
@@ -175,9 +175,9 @@ const EducationManager: React.FC = () => {
 
             {/* Error Message */}
             {error && (
-                <div className="mb-6 bg-red-500/10 border border-red-500/50 rounded-xl p-4 flex items-center gap-3 text-red-200">
-                    <AlertCircle size={20} />
-                    <p>{error}</p>
+                <div className="mb-3 bg-red-500/10 border border-red-500/50 rounded-lg p-2 flex items-center gap-2 text-red-200">
+                    <AlertCircle size={16} />
+                    <p className="text-sm">{error}</p>
                     <button onClick={() => setError(null)} className="ml-auto text-red-400 hover:text-red-200"><X size={18} /></button>
                 </div>
             )}
@@ -192,8 +192,8 @@ const EducationManager: React.FC = () => {
                 <div className="grid grid-cols-1 gap-4">
                     {educations.map(edu => (
                         <div key={edu.id} className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 hover:border-gray-600 transition-all group">
-                            <div className="flex flex-col md:flex-row gap-6">
-                                <div className="w-16 h-16 rounded-xl bg-gray-700 flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-600">
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="w-12 h-12 rounded-lg bg-gray-700 flex-shrink-0 overflow-hidden flex items-center justify-center border border-gray-600">
                                     {edu.logo ? (
                                         <img src={edu.logo} alt={edu.institution} className="w-full h-full object-cover" />
                                     ) : (
@@ -223,7 +223,7 @@ const EducationManager: React.FC = () => {
                     ))}
                     
                     {educations.length === 0 && (
-                        <div className="text-center py-20 bg-gray-800/30 border border-dashed border-gray-700 rounded-3xl">
+                        <div className="text-center py-12 bg-gray-800/30 border border-dashed border-gray-700 rounded-2xl">
                             <GraduationCap className="mx-auto text-gray-600 mb-4" size={48} />
                             <p className="text-gray-400 italic">No education data available.</p>
                         </div>
@@ -234,18 +234,18 @@ const EducationManager: React.FC = () => {
             {/* Form Modal */}
             {isFormOpen && (
                 <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex justify-center items-center z-50 p-4">
-                    <div className="bg-gray-900 border border-gray-700 p-6 md:p-8 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
-                        <div className="flex justify-between items-center mb-6">
-                            <h3 className="text-2xl font-bold text-white flex items-center gap-3">
-                                {editingEducation ? <Pencil className="text-navy-400" /> : <Plus className="text-navy-400" />}
+                    <div className="bg-gray-900 border border-gray-700 p-4 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-200">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                                {editingEducation ? <Pencil className="text-navy-400" size={18} /> : <Plus className="text-navy-400" size={18} />}
                                 {editingEducation ? 'Edit' : 'Add'} Education
                             </h3>
                             <button onClick={closeForm} className="text-gray-400 hover:text-white transition-colors">
-                                <X size={24} />
+                                <X size={20} />
                             </button>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-3">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-300 mb-2">Institution</label>
@@ -345,11 +345,11 @@ const EducationManager: React.FC = () => {
                                 <Plus size={16} /> Add Achievement
                             </button>
 
-                            <div className="flex gap-3 pt-6 border-t border-gray-800">
-                                <button type="button" onClick={closeForm} className="flex-1 py-3 px-6 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-xl transition-colors">
+                            <div className="flex gap-2 pt-4 border-t border-gray-800">
+                                <button type="button" onClick={closeForm} className="flex-1 py-2 px-4 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors text-sm">
                                     Cancel
                                 </button>
-                                <button type="submit" disabled={isSubmitting} className="flex-[2] py-3 px-6 bg-navy-600 hover:bg-navy-500 text-white font-bold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-50">
+                                <button type="submit" disabled={isSubmitting} className="flex-[2] py-2 px-4 bg-navy-600 hover:bg-navy-500 text-white font-bold rounded-lg transition-all shadow-lg flex items-center justify-center gap-1 disabled:opacity-50 text-sm">
                                     {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : null}
                                     {editingEducation ? 'Update Education' : 'Save Education'}
                                 </button>

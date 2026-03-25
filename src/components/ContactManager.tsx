@@ -91,9 +91,9 @@ const ContactManager: React.FC = () => {
     }
 
     return (
-        <div className="bg-navy-900 text-white p-8 rounded-lg shadow">
+        <div className="bg-navy-900 text-white p-4 rounded-lg shadow">
 
-            <h2 className="text-2xl font-bold mb-6">
+            <h2 className="text-lg font-bold mb-3">
                 Manage Contact Info
             </h2>
 
@@ -162,7 +162,7 @@ const ContactManager: React.FC = () => {
 
                         <button
                             type="submit"
-                            className="bg-navy-700 text-white font-bold py-2 px-6 rounded-lg hover:bg-navy-600"
+                            className="bg-navy-700 text-white font-bold py-1 px-4 rounded-lg hover:bg-navy-600 text-sm"
                         >
                             Save Changes
                         </button>

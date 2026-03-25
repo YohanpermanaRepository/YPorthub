@@ -124,18 +124,18 @@ const CertificationManager: React.FC = () => {
   }
 
   return (
-    <div className="bg-gray-800 p-8 rounded-2xl shadow-xl border border-gray-700">
+    <div className="bg-gray-800 p-4 rounded-2xl shadow-xl border border-gray-700">
 
       {/* Header */}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Award className="w-6 h-6" />
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+          <Award className="w-5 h-5" />
           Manage Certifications
         </h2>
 
         <button
           onClick={() => openForm()}
-          className="flex items-center gap-2 bg-gradient-to-r from-navy-500 to-indigo-600 hover:from-navy-600 hover:to-indigo-700 text-white font-semibold py-2 px-4 rounded-lg"
+          className="flex items-center gap-1 bg-gradient-to-r from-navy-500 to-indigo-600 hover:from-navy-600 hover:to-indigo-700 text-white font-semibold py-1 px-3 rounded-lg text-sm"
         >
           <Plus className="w-4 h-4" />
           Add New
@@ -152,13 +152,13 @@ const CertificationManager: React.FC = () => {
       {/* Form Modal */}
       {isFormOpen && (
         <div className="fixed inset-0 bg-black/60 flex justify-center items-center z-50 p-4">
-          <div className="bg-gray-800 p-8 rounded-xl shadow-2xl w-full max-w-lg border border-gray-700">
+          <div className="bg-gray-800 p-4 rounded-lg shadow-2xl w-full max-w-md border border-gray-700">
 
-            <h3 className="text-xl font-bold text-white mb-4">
+            <h3 className="text-base font-bold text-white mb-3">
               {editingCert ? 'Edit' : 'Add'} Certification
             </h3>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
 
               <input
                 name="name"

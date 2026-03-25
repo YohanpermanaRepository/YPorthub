@@ -137,13 +137,13 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout, authInfo }) => 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="bg-gradient-to-r from-gray-800 to-gray-800 border-b border-gray-700 px-8 py-6 shadow-lg">
+        <header className="bg-gradient-to-r from-gray-800 to-gray-800 border-b border-gray-700 px-6 py-4 shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-3xl font-bold text-white">{activeSection}</h2>
-              <p className="text-gray-400 text-sm mt-1">Manage your portfolio content</p>
+              <h2 className="text-2xl font-bold text-white">{activeSection}</h2>
+              <p className="text-gray-400 text-xs mt-0.5">Manage your portfolio content</p>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
               <div className="text-right">
                 <p className="text-white font-medium">{username}</p>
                 <p className="text-gray-400 text-sm capitalize">{role} Account</p>

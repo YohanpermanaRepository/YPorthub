@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { AboutData } from '../types';
 import ReactCrop, { type Crop, type PixelCrop, centerCrop } from 'react-image-crop';
 import { API_BASE_URL } from '../config';
-import { Loader2 } from "lucide-react";
+import { Loader2, Upload } from "lucide-react";
 
 // Helper function to generate a cropped image file from a canvas
 function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<File> {
@@ -233,14 +233,14 @@ const AboutManager: React.FC = () => {
         }
 
     return (
-        <div className="bg-navy-900 text-white p-8 rounded-lg shadow">
+        <div className="bg-navy-900 text-white p-4 rounded-lg shadow">
 
             {isCropModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[100] p-4">
 
-                    <div className="bg-navy-900 text-white p-6 rounded-lg shadow-xl w-full max-w-2xl">
+                    <div className="bg-navy-900 text-white p-4 rounded-lg shadow-xl w-full max-w-lg">
 
-                        <h3 className="text-xl font-bold mb-4">
+                        <h3 className="text-sm font-bold mb-2">
                             Crop 'About Me' Image
                         </h3>
 
@@ -261,7 +261,7 @@ const AboutManager: React.FC = () => {
                             </ReactCrop>
                         )}
 
-                        <div className="flex justify-end gap-4 mt-4">
+                        <div className="flex justify-end gap-2 mt-3">
 
                             <button
                                 type="button"
@@ -288,7 +288,7 @@ const AboutManager: React.FC = () => {
                 </div>
             )}
 
-            <h2 className="text-2xl font-bold mb-6">
+            <h2 className="text-lg font-bold mb-3">
                 Manage About Section
             </h2>
 
@@ -304,7 +304,7 @@ const AboutManager: React.FC = () => {
                 </p>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+            <form onSubmit={handleSubmit} className="space-y-3">
 
                 <div>
                     <label className="block text-sm font-semibold text-gray-200 mb-2">
@@ -359,7 +359,7 @@ const AboutManager: React.FC = () => {
                                     }
                                     className="text-sm bg-navy-700 text-white font-semibold px-3 py-2 rounded-lg hover:bg-navy-600"
                                 >
-                                    Upload
+                                     <Upload className="w-4 h-4" />
                                 </button>
 
                                 <button
@@ -389,7 +389,7 @@ const AboutManager: React.FC = () => {
 
                     <button
                         type="submit"
-                        className="bg-navy-700 text-white font-bold py-2 px-6 rounded-lg hover:bg-navy-600"
+                        className="bg-navy-700 text-white font-bold py-1 px-4 rounded-lg hover:bg-navy-600 text-sm"
                     >
                         Save Changes
                     </button>

@@ -321,12 +321,12 @@ const ProjectManager: React.FC = () => {
         <div>
             {isCropModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-[100] p-4 backdrop-blur-sm">
-                    <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-2xl border border-gray-700">
-                        <h3 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                    <div className="bg-gray-800 p-4 rounded-2xl shadow-2xl w-full max-w-lg border border-gray-700">
+                        <h3 className="text-lg font-bold text-white mb-3 flex items-center gap-2">
                             <Scissors className="w-5 h-5 text-gray-300" />
                             Crop Project Image
                         </h3>
-                        <p className="text-gray-400 text-sm mb-6">Optionally crop the image, or upload it in full resolution.</p>
+                        <p className="text-gray-400 text-xs mb-4">Optionally crop the image, or upload it in full resolution.</p>
                         {upImg && (
                             <ReactCrop
                                 crop={crop}
@@ -344,12 +344,12 @@ const ProjectManager: React.FC = () => {
                                 />
                             </ReactCrop>
                         )}
-                        <div className="flex flex-wrap justify-end gap-3 mt-6 pt-6 border-t border-gray-600">
-                            <button type="button" onClick={() => { setIsCropModalOpen(false); setUpImg(''); }} className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">Cancel</button>
-                            <button type="button" onClick={handleUploadWithoutCropping} className="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-2 px-6 rounded-lg transition-colors disabled:opacity-50" disabled={uploadingImageIndex !== null}>
+                        <div className="flex flex-wrap justify-end gap-2 mt-4 pt-4 border-t border-gray-600">
+                            <button type="button" onClick={() => { setIsCropModalOpen(false); setUpImg(''); }} className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-1 px-4 rounded-lg transition-colors text-sm">Cancel</button>
+                            <button type="button" onClick={handleUploadWithoutCropping} className="bg-gray-600 hover:bg-gray-500 text-white font-semibold py-1 px-4 rounded-lg transition-colors disabled:opacity-50 text-sm" disabled={uploadingImageIndex !== null}>
                                 Upload Full Size
                             </button>
-                            <button type="button" onClick={handleCropAndUpload} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-all disabled:opacity-50" disabled={!completedCrop?.width || uploadingImageIndex !== null}>
+                            <button type="button" onClick={handleCropAndUpload} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-1 px-4 rounded-lg transition-all disabled:opacity-50 text-sm" disabled={!completedCrop?.width || uploadingImageIndex !== null}>
                                 {uploadingImageIndex !== null ? 'Uploading...' : 'Crop & Upload'}
                             </button>
                         </div>
@@ -359,12 +359,12 @@ const ProjectManager: React.FC = () => {
 
             {isFormOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto border border-gray-700">
-                        <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
-                            <Rocket className="w-6 h-6 text-gray-300" />
+                    <div className="bg-gray-800 p-4 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-gray-700">
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                            <Rocket className="w-5 h-5 text-gray-300" />
                             {editingProject ? 'Edit' : 'Add'} Project
                         </h3>
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <label className="block text-sm font-semibold text-gray-200 mb-2">Project Title</label>
                                 <input name="title" value={formData.title} onChange={handleInputChange} placeholder="e.g., E-Commerce Platform" required className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"/>
@@ -391,11 +391,11 @@ const ProjectManager: React.FC = () => {
                                 <input name="videoUrl" value={formData.videoUrl} onChange={handleInputChange} placeholder="https://youtube.com/... (Optional)" className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"/>
                             </div>
 
-                            <div className="bg-gray-700 bg-opacity-50 rounded-xl p-4 border border-gray-600">
-                                <h4 className="font-semibold text-white mb-4">Technologies</h4>
+                            <div className="bg-gray-700 bg-opacity-50 rounded-xl p-3 border border-gray-600">
+                                <h4 className="font-semibold text-white mb-3">Technologies</h4>
                                 {/* Selected */}
                                 <label className="block text-xs text-gray-300 mb-2 font-medium">Selected</label>
-                                <div className="flex flex-wrap gap-2 p-3 bg-gray-800 rounded-lg min-h-[44px] mb-4">
+                                <div className="flex flex-wrap gap-1 p-2 bg-gray-800 rounded-lg min-h-[44px] mb-3">
                                     {formData.technologies.length > 0 ? formData.technologies.map((techName) => (
                                         <div key={techName} className="bg-blue-500 bg-opacity-20 text-blue-200 text-sm font-semibold px-3 py-1 rounded-full flex items-center gap-2 cursor-pointer hover:bg-opacity-30 transition" onClick={() => handleDeselectTechnology(techName)}>
                                             <span>{techName}</span>
@@ -406,7 +406,7 @@ const ProjectManager: React.FC = () => {
 
                                 {/* Available */}
                                 <label className="block text-xs text-gray-300 mb-2 font-medium">Available</label>
-                                <div className="flex flex-wrap gap-2 p-3 bg-gray-900 rounded-lg min-h-[44px] mb-4">
+                                <div className="flex flex-wrap gap-1 p-2 bg-gray-900 rounded-lg min-h-[44px] mb-3">
                                     {availableTechnologies.length > 0 ? availableTechnologies.map((tech) => (
                                         <div key={tech.id} className="bg-gray-600 hover:bg-gray-500 text-gray-100 text-sm font-semibold px-3 py-1 rounded-full cursor-pointer transition" onClick={() => handleSelectTechnology(tech.name)}>
                                             {tech.name}
@@ -415,29 +415,29 @@ const ProjectManager: React.FC = () => {
                                 </div>
 
                                 {/* Add new */}
-                                <div className="flex gap-2">
+                                <div className="flex gap-1">
                                     <input
                                         id="new-tech-input"
                                         type="text"
                                         value={newTechInput}
                                         onChange={(e) => setNewTechInput(e.target.value)}
-                                        placeholder="Add new technology..."
-                                        className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                                        placeholder="Add new tech..."
+                                        className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-sm"
                                     />
-                                    <button type="button" onClick={handleAddNewTechnology} className="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-4 py-2 rounded-lg transition-colors">
+                                    <button type="button" onClick={handleAddNewTechnology} className="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-3 py-1 rounded-lg transition-colors text-sm">
                                         Add
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="bg-gray-700 bg-opacity-50 rounded-xl p-4 border border-gray-600">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h4 className="font-semibold text-white">Project Images</h4>
-                                    <button type="button" onClick={handleAddImageField} className="text-blue-400 hover:text-blue-300 text-sm font-semibold transition-colors">
+                            <div className="bg-gray-700 bg-opacity-50 rounded-xl p-3 border border-gray-600">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h4 className="font-semibold text-white text-sm">Project Images</h4>
+                                    <button type="button" onClick={handleAddImageField} className="text-blue-400 hover:text-blue-300 text-xs font-semibold transition-colors">
                                         + Add Image
                                     </button>
                                 </div>
-                                <div className="space-y-3">
+                                <div className="space-y-2">
                                     {formData.images.map((url, index) => (
                                         <div key={index} className="flex gap-2 items-center">
                                             <input 
@@ -466,38 +466,38 @@ const ProjectManager: React.FC = () => {
                                 </div>
                             </div>
 
-                            <label className="flex items-center gap-3 text-gray-200 cursor-pointer hover:text-white transition">
+                            <label className="flex items-center gap-2 text-gray-200 cursor-pointer hover:text-white transition text-sm">
                                 <input type="checkbox" name="isFeatured" checked={formData.isFeatured} onChange={handleInputChange} className="w-4 h-4 rounded bg-gray-700 border border-gray-600"/>
-                                <span className="font-medium"> Mark as Featured Project</span>
+                                <span className="font-medium">Mark as Featured Project</span>
                             </label>
 
-                            <div className="flex justify-end gap-3 pt-6 border-t border-gray-600">
-                                <button type="button" onClick={closeForm} className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors">Cancel</button>
-                                <button type="submit" className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-all">{editingProject ? 'Update' : 'Save'}</button>
+                            <div className="flex justify-end gap-2 pt-4 border-t border-gray-600">
+                                <button type="button" onClick={closeForm} className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-1 px-4 rounded-lg transition-colors text-sm">Cancel</button>
+                                <button type="submit" className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-1 px-4 rounded-lg transition-all text-sm">{editingProject ? 'Update' : 'Save'}</button>
                             </div>
                         </form>
                     </div>
                 </div>
             )}
 
-            <div className="p-8">
-                <div className="flex items-center justify-between mb-8">
+            <div className="p-4">
+                <div className="flex items-center justify-between mb-4">
                     <div>
-                        <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
+                        <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
                             Projects
                         </h2>
                         <p className="text-gray-400">Showcase your best work</p>
                     </div>
-                    <button onClick={() => openForm()} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-lg transition-all shadow-lg">
+                    <button onClick={() => openForm()} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow-lg text-sm">
                         + Add Project
                     </button>
                 </div>
 
                 {isLoading && <p className="text-gray-400">Loading...</p>}
                 {error && (
-                    <div className="mb-6 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-50 rounded-lg p-4 flex items-center gap-3">
+                    <div className="mb-4 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-50 rounded-lg p-2 flex items-center gap-2">
                         <span>❌</span>
-                        <p className="text-red-200">{error}</p>
+                        <p className="text-red-200 text-sm">{error}</p>
                     </div>
                 )}
                 

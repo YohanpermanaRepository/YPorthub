@@ -196,8 +196,8 @@ const ProfileManager: React.FC = () => {
         <div>
             {isCropModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-gray-800 p-8 rounded-2xl shadow-2xl w-full max-w-md border border-gray-700">
-                        <h3 className="text-2xl font-bold text-white mb-6 flex items-center gap-2">
+                    <div className="bg-gray-800 p-4 rounded-2xl shadow-2xl w-full max-w-sm border border-gray-700">
+                        <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                             <Scissors className="w-5 h-5" />
                             Crop Your Profile Picture
                         </h3>
@@ -219,18 +219,18 @@ const ProfileManager: React.FC = () => {
                                 />
                             </ReactCrop>
                         )}
-                        <div className="flex justify-end gap-3 mt-6">
+                        <div className="flex justify-end gap-2 mt-4">
                             <button 
                                 type="button" 
                                 onClick={() => { setIsCropModalOpen(false); setUpImg(''); }} 
-                                className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2 px-6 rounded-lg transition-colors"
+                                className="bg-gray-700 hover:bg-gray-600 text-white font-semibold py-1 px-3 rounded-lg transition-colors text-sm"
                             >
                                 Cancel
                             </button>
                             <button 
                                 type="button" 
                                 onClick={handleCropAndUpload} 
-                                className="bg-gradient-to-r from-navy-500 to-indigo-600 hover:from-navy-600 hover:to-indigo-700 text-white font-semibold py-2 px-6 rounded-lg transition-all disabled:opacity-50" 
+                                className="bg-gradient-to-r from-navy-500 to-indigo-600 hover:from-navy-600 hover:to-indigo-700 text-white font-semibold py-1 px-3 rounded-lg transition-all disabled:opacity-50 text-sm" 
                                 disabled={!completedCrop?.width || isUploading}
                             >
                                 {isUploading ? 'Uploading...' : 'Crop & Upload'}
@@ -240,32 +240,32 @@ const ProfileManager: React.FC = () => {
                 </div>
             )}
 
-            <div className="p-8">
+            <div className="p-4">
                 {/* Header */}
-                <div className="mb-8">
-                    <h2 className="text-3xl font-bold text-white mb-2 flex items-center gap-2">
-                        <User className="w-6 h-6" />
+                <div className="mb-4">
+                    <h2 className="text-2xl font-bold text-white mb-1 flex items-center gap-2">
+                        <User className="w-5 h-5" />
                         Manage Profile
                     </h2>
-                    <p className="text-gray-400">Update your profile information and picture</p>
+                    <p className="text-gray-400 text-sm">Update your profile information and picture</p>
                 </div>
 
                 {/* Alerts */}
                 {error && (
-                    <div className="mb-6 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-50 rounded-lg p-4 flex items-center gap-3">
-                        <XCircle className="w-5 h-5 text-red-400" />
-                        <p className="text-red-200">{error}</p>
+                    <div className="mb-4 bg-red-500 bg-opacity-10 border border-red-500 border-opacity-50 rounded-lg p-2 flex items-center gap-2">
+                        <XCircle className="w-4 h-4 text-red-400" />
+                        <p className="text-red-200 text-sm">{error}</p>
                     </div>
                 )}
                 {success && (
-                    <div className="mb-6 bg-emerald-500 bg-opacity-10 border border-emerald-500 border-opacity-50 rounded-lg p-4 flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-emerald-400" />
-                        <p className="text-emerald-200">{success}</p>
+                    <div className="mb-4 bg-emerald-500 bg-opacity-10 border border-emerald-500 border-opacity-50 rounded-lg p-2 flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-emerald-400" />
+                        <p className="text-emerald-200 text-sm">{success}</p>
                     </div>
                 )}
                 
                 {profile && (
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit} className="space-y-3">
                         {/* Name Field */}
                         <div>
                             <label htmlFor="name" className="block text-sm font-semibold text-gray-200 mb-3">Full Name</label>
@@ -283,7 +283,7 @@ const ProfileManager: React.FC = () => {
                         {/* Profile Image Section */}
                         <div className="bg-gray-700 bg-opacity-50 rounded-xl p-6 border border-gray-600">
                             <label className="block text-sm font-semibold text-gray-200 mb-4">Profile Picture</label>
-                            <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-4">
                                 {profile.profileImage && (
                                     <div className="flex-shrink-0">
                                         <img 
@@ -320,7 +320,7 @@ const ProfileManager: React.FC = () => {
                                             {isUploading ? 'Uploading...' : (
                                             <>
                                                 <Upload className="w-4 h-4" />
-                                                Upload
+                                        
                                             </>
                                             )}
                                         </button>
@@ -347,13 +347,13 @@ const ProfileManager: React.FC = () => {
                         </div>
 
                         {/* Submit Button */}
-                        <div className="flex justify-end gap-3 pt-6 border-t border-gray-600">
+                        <div className="flex justify-end gap-2 pt-3 border-t border-gray-600">
                             <button 
                                 type="submit" 
-                                className="bg-gradient-to-r from-navy-500 to-indigo-600 hover:from-navy-600 hover:to-indigo-700 text-white font-bold py-3 px-8 rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-2"
+                                className="bg-gradient-to-r from-navy-500 to-indigo-600 hover:from-navy-600 hover:to-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-all shadow-lg hover:shadow-xl flex items-center gap-1 text-sm"
                             >
-                                <Save className="w-5 h-5" />
-                                Save Changes
+                                <Save className="w-4 h-4" />
+                                Save
                             </button>
                         </div>
                     </form>
