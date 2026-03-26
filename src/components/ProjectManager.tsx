@@ -226,7 +226,9 @@ const ProjectManager: React.FC = () => {
             console.log('Saving project with technologies:', editingData.technologies);
             const payload = {
                 ...editingData,
-                githubLink: editingData.githubLink?.trim() || undefined,
+                githubLink: editingData.githubLink?.trim() ?? '',
+                demoLink: editingData.demoLink?.trim() ?? '',
+                videoUrl: editingData.videoUrl?.trim() ?? '',
                 technologies: (editingData.technologies || []).map(t => typeof t === 'string' ? t : t.name)
             };
 
