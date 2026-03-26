@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import type { AboutData } from '../types';
 import ReactCrop, { type Crop, type PixelCrop, centerCrop } from 'react-image-crop';
 import { API_BASE_URL } from '../config';
-import { Loader2, Upload } from "lucide-react";
+import { Loader2, Upload, Eye, X } from "lucide-react";
 
 // Helper function to generate a cropped image file from a canvas
 function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<File> {
@@ -65,6 +65,8 @@ const AboutManager: React.FC = () => {
     const [completedCrop, setCompletedCrop] = useState<PixelCrop>();
     const [isCropModalOpen, setIsCropModalOpen] = useState(false);
     const [croppingImageIndex, setCroppingImageIndex] = useState<number | null>(null);
+    const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+    const [previewImageUrl, setPreviewImageUrl] = useState<string>('');
 
     const fetchAbout = useCallback(async () => {
         setIsLoading(true);
@@ -288,6 +290,33 @@ const AboutManager: React.FC = () => {
                 </div>
             )}
 
+            {isPreviewModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[100] p-4">
+                    <div className="bg-navy-900 text-white p-6 rounded-lg shadow-xl w-full max-w-2xl">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold">Image Preview</h3>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsPreviewModalOpen(false);
+                                    setPreviewImageUrl('');
+                                }}
+                                className="text-gray-400 hover:text-white"
+                            >
+                                <X className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <div className="flex justify-center">
+                            <img
+                                src={previewImageUrl}
+                                alt="Preview"
+                                className="max-w-full max-h-[70vh] rounded-lg"
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <h2 className="text-lg font-bold mb-3">
                 Manage About Section
             </h2>
@@ -360,6 +389,21 @@ const AboutManager: React.FC = () => {
                                     className="text-sm bg-navy-700 text-white font-semibold px-3 py-2 rounded-lg hover:bg-navy-600"
                                 >
                                      <Upload className="w-4 h-4" />
+                                </button>
+
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        if (url.trim()) {
+                                            setPreviewImageUrl(url);
+                                            setIsPreviewModalOpen(true);
+                                        }
+                                    }}
+                                    className="text-sm bg-navy-700 text-white font-semibold px-3 py-2 rounded-lg hover:bg-navy-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    disabled={!url.trim()}
+                                    title="Preview image"
+                                >
+                                    <Eye className="w-4 h-4" />
                                 </button>
 
                                 <button
