@@ -10,6 +10,7 @@ import {
   Loader2,
   ImagePlus,
   Calendar,
+  Search,
 } from 'lucide-react';
 
 type ActivityFormState = {
@@ -46,11 +47,22 @@ const ActivityManager: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploadingImages, setIsUploadingImages] = useState(false);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(12);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingActivity, setEditingActivity] = useState<Activity | null>(null);
+
+  // State for image preview modal (same concept as ProjectManager)
+  const [isImagePreviewOpen, setIsImagePreviewOpen] = useState(false);
+  const [imagePreviewUrls, setImagePreviewUrls] = useState<string[]>([]);
+  const [imagePreviewIndex, setImagePreviewIndex] = useState(0);
 
   // IMPORTANT: untuk update, backend harus mempertahankan gambar lama
   // kalau frontend "tidak mengirim field gambar apa pun".
@@ -96,6 +108,20 @@ const ActivityManager: React.FC = () => {
     fetchData();
   }, [fetchData]);
 
+  useEffect(() => {
+    if (!isImagePreviewOpen) return;
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeImagePreview();
+      if (e.key === 'ArrowLeft') goPrevImage();
+      if (e.key === 'ArrowRight') goNextImage();
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isImagePreviewOpen, imagePreviewUrls.length]);
+
   const openForm = (activity: Activity | null = null) => {
     setError(null);
     setSuccess(null);
@@ -134,6 +160,37 @@ const ActivityManager: React.FC = () => {
     setImagesDirty(false);
     setCreatedAtMode('now');
     setCreatedAtInput('');
+  };
+
+  const openImagePreview = (urls: string[], index: number) => {
+    const cleaned = urls.map((u) => u.trim()).filter(Boolean);
+    if (cleaned.length === 0) return;
+    const safeIndex = Math.min(Math.max(index, 0), cleaned.length - 1);
+    setImagePreviewUrls(cleaned);
+    setImagePreviewIndex(safeIndex);
+    setIsImagePreviewOpen(true);
+  };
+
+  const closeImagePreview = () => {
+    setIsImagePreviewOpen(false);
+    setImagePreviewUrls([]);
+    setImagePreviewIndex(0);
+  };
+
+  const goPrevImage = () => {
+    setImagePreviewIndex((prev) => {
+      const len = imagePreviewUrls.length;
+      if (len <= 1) return prev;
+      return (prev - 1 + len) % len;
+    });
+  };
+
+  const goNextImage = () => {
+    setImagePreviewIndex((prev) => {
+      const len = imagePreviewUrls.length;
+      if (len <= 1) return prev;
+      return (prev + 1) % len;
+    });
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -293,8 +350,115 @@ const ActivityManager: React.FC = () => {
       }
 
       setActivities((prev) => prev.filter((a) => a.id !== id));
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
     } catch (err) {
       setError((err as Error).message);
+    }
+  };
+
+  const toggleSelect = (id: number) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const filteredActivities = (() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return activities;
+
+    return activities.filter((a) => {
+      const haystack = [
+        a.title,
+        a.description,
+        a.createdAt,
+        a.imageUrl ?? '',
+        ...(a.images || []),
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  })();
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
+  const startIdx = (currentPage - 1) * itemsPerPage;
+  const endIdx = startIdx + itemsPerPage;
+  const paginatedActivities = filteredActivities.slice(startIdx, endIdx);
+
+  // Reset page if out of bounds (e.g. after search/delete)
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1);
+    }
+  }, [currentPage, totalPages, filteredActivities.length]);
+
+  // When search changes, go back to page 1 for usability
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const toggleSelectAll = () => {
+    const idsOnPage = paginatedActivities.map((a) => a.id);
+    if (idsOnPage.length === 0) return;
+
+    const allSelectedOnPage = idsOnPage.every((id) => selectedIds.has(id));
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allSelectedOnPage) {
+        idsOnPage.forEach((id) => next.delete(id));
+      } else {
+        idsOnPage.forEach((id) => next.add(id));
+      }
+      return next;
+    });
+  };
+
+  const deleteSelected = async () => {
+    if (selectedIds.size === 0) return;
+    if (!window.confirm(`Delete ${selectedIds.size} activitiy(s)?`)) return;
+
+    const idsToDelete = Array.from(selectedIds);
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      setError('Authentication error.');
+      return;
+    }
+
+    setIsBulkDeleting(true);
+    setError(null);
+    try {
+      await Promise.all(
+        idsToDelete.map((id) =>
+          fetch(`${API_BASE_URL}/activity/${id}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` },
+          }).then(async (res) => {
+            if (!res.ok) {
+              const errData = await res.json().catch(() => null);
+              throw new Error(errData?.message || `Failed to delete activity ${id}`);
+            }
+          })
+        )
+      );
+
+      setActivities((prev) => prev.filter((a) => !idsToDelete.includes(a.id)));
+      if (editingActivity && idsToDelete.includes(editingActivity.id)) {
+        closeForm();
+      }
+      setSelectedIds(new Set());
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -316,13 +480,47 @@ const ActivityManager: React.FC = () => {
           </h2>
           <p className="text-gray-400 text-sm">Manage your activities and images</p>
         </div>
-        <button
-          onClick={() => openForm()}
-          className="flex items-center justify-center gap-1 bg-navy-600 hover:bg-navy-500 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow-lg active:scale-95 text-sm"
-        >
-          <Plus size={20} />
-          Add Activity
-        </button>
+        <div className="flex gap-2 items-center">
+          {selectedIds.size > 0 && (
+            <button
+              type="button"
+              onClick={() => void deleteSelected()}
+              disabled={isBulkDeleting}
+              className="flex items-center justify-center gap-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-2 px-3 rounded-lg transition-all text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Trash2 size={16} />
+              Delete ({selectedIds.size})
+            </button>
+          )}
+          <button
+            onClick={() => openForm()}
+            className="flex items-center justify-center gap-1 bg-navy-600 hover:bg-navy-500 text-white font-semibold py-2 px-4 rounded-lg transition-all shadow-lg active:scale-95 text-sm"
+          >
+            <Plus size={20} />
+            Add Activity
+          </button>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative mb-4">
+        <Search className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+        <input
+          type="text"
+          placeholder="Search activities..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full bg-gray-700 border border-gray-600 rounded-lg px-9 py-2 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 text-sm"
+        />
+        {searchQuery.trim() && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-200"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       {error && (
@@ -339,82 +537,160 @@ const ActivityManager: React.FC = () => {
           <ImagePlus className="mx-auto text-gray-600 mb-4" size={48} />
           <p className="text-gray-400 italic">No activities yet.</p>
         </div>
+      ) : filteredActivities.length === 0 ? (
+        <div className="text-center py-12 bg-gray-800/30 border border-dashed border-gray-700 rounded-2xl">
+          <ImagePlus className="mx-auto text-gray-600 mb-4" size={48} />
+          <p className="text-gray-400 italic">No activities match your search.</p>
+          {searchQuery.trim() ? (
+            <p className="text-xs text-gray-500 mt-2">Query: &quot;{searchQuery.trim()}&quot;</p>
+          ) : null}
+        </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {activities.map((a) => {
-            const firstImage = a.images?.[0] || a.imageUrl || '';
-            return (
-              <div
-                key={a.id}
-                className="bg-gray-800/50 border border-gray-700 rounded-2xl p-6 hover:border-gray-600 transition-all group"
-              >
-                <div className="flex flex-col md:flex-row gap-4">
-                  <div className="w-full md:w-28 h-28 md:h-28 rounded-lg bg-gray-700 flex-shrink-0 overflow-hidden border border-gray-600 relative">
-                    {firstImage ? (
-                      <img src={firstImage} alt={a.title} className="w-full h-full object-cover" />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center text-gray-500">
-                        <ImagePlus size={26} />
-                      </div>
-                    )}
-                    {a.images?.length > 1 && (
-                      <div className="absolute top-2 left-2 bg-black/60 text-white text-xs px-2 py-1 rounded">
-                        +{a.images.length - 1}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="flex justify-between items-start gap-3">
-                      <div className="min-w-0">
-                        <h3 className="text-xl font-bold text-white group-hover:text-navy-400 transition-colors truncate">
+        <div className="overflow-x-auto">
+          <div className="max-h-96 overflow-y-auto border border-gray-700 rounded-lg">
+            <table className="w-full text-sm">
+              <thead className="sticky top-0 bg-gray-700 border-b border-gray-600 z-10">
+                <tr>
+                  <th className="px-4 py-2 text-center text-gray-200 font-semibold w-14">
+                    <input
+                      type="checkbox"
+                      checked={
+                        paginatedActivities.length > 0 &&
+                        paginatedActivities.every((a) => selectedIds.has(a.id))
+                      }
+                      onChange={toggleSelectAll}
+                      onClick={(e) => e.stopPropagation()}
+                      className="cursor-pointer w-4 h-4 rounded border border-gray-500 bg-gray-600 checked:bg-blue-600 focus:outline-none"
+                    />
+                  </th>
+                  <th className="px-4 py-2 text-center text-gray-200 font-semibold w-14">No.</th>
+                  <th className="px-4 py-2 text-left text-gray-200 font-semibold">Title</th>
+                  <th className="px-4 py-2 text-left text-gray-200 font-semibold w-40">Created At</th>
+                  <th className="px-4 py-2 text-left text-gray-200 font-semibold">Description</th>
+                  <th className="px-4 py-2 text-left text-gray-200 font-semibold w-28">Images</th>
+                  <th className="px-4 py-2 text-center text-gray-200 font-semibold w-28">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700">
+                {paginatedActivities.map((a, index) => {
+                  return (
+                    <tr
+                      key={a.id}
+                      className="hover:bg-gray-700/50 transition cursor-pointer"
+                      onClick={() => openForm(a)}
+                    >
+                      <td className="px-4 py-2 text-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(a.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={() => toggleSelect(a.id)}
+                          className="cursor-pointer w-4 h-4 rounded border border-gray-500 bg-gray-600 checked:bg-blue-600 focus:outline-none"
+                        />
+                      </td>
+                      <td className="px-4 py-2 text-center text-gray-400 font-medium">
+                        {startIdx + index + 1}
+                      </td>
+                      <td className="px-4 py-2">
+                        <span className="text-white font-semibold hover:text-navy-400 transition-colors truncate block">
                           {a.title}
-                        </h3>
-                        {a.description ? (
-                          <p className="text-gray-400 text-sm mt-2 leading-relaxed line-clamp-2 md:line-clamp-none">
-                            {a.description}
-                          </p>
-                        ) : (
-                          <p className="text-gray-500 text-sm mt-2 italic">No description</p>
-                        )}
-                        <div className="flex items-center gap-2 text-gray-400 text-sm mt-3">
-                          <Calendar size={14} />
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-gray-300 whitespace-nowrap">
+                        <div className="inline-flex items-center gap-2">
+                          <Calendar size={14} className="text-navy-400" />
                           <span>{formatDate(a.createdAt) || '—'}</span>
                         </div>
-                      </div>
+                      </td>
+                      <td className="px-4 py-2 text-gray-400">
+                        {a.description ? (
+                          <span className="line-clamp-2">{a.description}</span>
+                        ) : (
+                          <span className="text-gray-500 italic">No description</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2">
+                        <span className="text-gray-300 text-sm">
+                          {a.images?.length ? `${a.images.length} images` : '—'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openForm(a);
+                            }}
+                            className="p-2 bg-gray-700 hover:bg-navy-600 text-gray-300 hover:text-white rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              void handleDelete(a.id);
+                            }}
+                            className="p-2 bg-gray-700 hover:bg-red-600 text-gray-300 hover:text-white rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => openForm(a)}
-                          className="p-2 bg-gray-700 hover:bg-navy-600 text-gray-300 hover:text-white rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(a.id)}
-                          className="p-2 bg-gray-700 hover:bg-red-600 text-gray-300 hover:text-white rounded-lg transition-colors"
-                          title="Delete"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
-                    </div>
-
-                    {a.images?.length ? (
-                      <div className="mt-4 grid grid-cols-3 gap-2">
-                        {a.images.slice(0, 3).map((img, idx) => (
-                          <div key={idx} className="rounded-lg overflow-hidden border border-gray-600 bg-gray-700">
-                            <img src={img} alt={`${a.title} ${idx + 1}`} className="w-full h-20 object-cover" />
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
-                  </div>
-                </div>
+          {/* Pagination Controls */}
+          {filteredActivities.length > 0 && (
+            <div className="flex items-center justify-between mt-4 px-2">
+              <div className="text-sm text-gray-400">
+                Showing {startIdx + 1} to {Math.min(endIdx, filteredActivities.length)} of {filteredActivities.length} items
               </div>
-            );
-          })}
+
+              {totalPages > 1 && (
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                    disabled={currentPage === 1}
+                    className="px-2 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm"
+                  >
+                    ← Prev
+                  </button>
+
+                  <div className="flex gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-3 py-1 rounded text-sm font-medium transition ${
+                          currentPage === page
+                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
+                            : 'bg-gray-700 hover:bg-gray-600 text-gray-200'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-2 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded text-sm"
+                  >
+                    Next →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -518,20 +794,42 @@ const ActivityManager: React.FC = () => {
                 </div>
 
                 {formData.images.length ? (
-                  <div className="grid grid-cols-3 gap-2 mb-3">
-                    {formData.images.map((img, idx) => (
-                      <div key={`${img}-${idx}`} className="relative rounded-lg overflow-hidden border border-gray-600 bg-gray-700">
-                        <img src={img} alt={`Activity image ${idx + 1}`} className="w-full h-20 object-cover" />
-                        <button
-                          type="button"
-                          onClick={() => removeImageAt(idx)}
-                          className="absolute top-1 right-1 bg-black/60 hover:bg-black text-white rounded-full w-6 h-6 flex items-center justify-center"
-                          title="Remove image"
+                  <div className="space-y-2 mb-3">
+                    {formData.images.map((img, idx) => {
+                      const url = String(img || '').trim();
+                      return (
+                        <div
+                          key={`${img}-${idx}`}
+                          className="flex items-center gap-2 bg-gray-700/40 border border-gray-600 rounded-lg px-2 py-2"
                         >
-                          <X size={14} />
-                        </button>
-                      </div>
-                    ))}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs text-gray-200 truncate" title={url || '—'}>
+                              {url || '—'}
+                            </div>
+                          </div>
+
+                          {editingActivity && url ? (
+                            <button
+                              type="button"
+                              onClick={() => openImagePreview(formData.images, idx)}
+                              className="px-2 py-1 rounded-md bg-gray-700 hover:bg-gray-600 text-white text-xs font-semibold"
+                              title="Preview"
+                            >
+                              Preview
+                            </button>
+                          ) : null}
+
+                          <button
+                            type="button"
+                            onClick={() => removeImageAt(idx)}
+                            className="px-2 py-1 rounded-md bg-red-500/15 hover:bg-red-500/25 text-red-200 text-xs font-semibold"
+                            title="Remove image"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 ) : (
                   <div className="text-gray-500 text-sm italic mb-3">No images selected.</div>
@@ -604,6 +902,70 @@ const ActivityManager: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {isImagePreviewOpen && imagePreviewUrls.length > 0 && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 flex justify-center items-center z-[110] p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="bg-gray-800 p-4 rounded-2xl shadow-2xl w-full max-w-3xl border border-gray-700">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-bold text-white flex items-center gap-2">Image Preview</h3>
+              <button
+                type="button"
+                onClick={closeImagePreview}
+                className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 text-white disabled:opacity-50"
+                title="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-black/30 rounded-lg overflow-hidden border border-gray-700 relative">
+              <div className="absolute left-2 top-1/2 -translate-y-1/2 z-10">
+                <button
+                  type="button"
+                  onClick={goPrevImage}
+                  className="p-2 rounded-full bg-gray-900/60 hover:bg-gray-900/80 text-white disabled:opacity-50"
+                  title="Previous"
+                  aria-label="Previous image"
+                  disabled={imagePreviewUrls.length <= 1}
+                >
+                  ←
+                </button>
+              </div>
+
+              <div className="absolute right-2 top-1/2 -translate-y-1/2 z-10">
+                <button
+                  type="button"
+                  onClick={goNextImage}
+                  className="p-2 rounded-full bg-gray-900/60 hover:bg-gray-900/80 text-white disabled:opacity-50"
+                  title="Next"
+                  aria-label="Next image"
+                  disabled={imagePreviewUrls.length <= 1}
+                >
+                  →
+                </button>
+              </div>
+
+              <img
+                src={imagePreviewUrls[imagePreviewIndex]}
+                alt="Preview"
+                className="w-full max-h-[70vh] object-contain mx-auto"
+                onError={() => goNextImage()}
+              />
+            </div>
+
+            <div className="mt-2 text-sm text-gray-400 flex items-center justify-between">
+              <span>
+                {imagePreviewIndex + 1} / {imagePreviewUrls.length}
+              </span>
+              <span className="text-gray-500">Tip: gunakan tombol panah kiri/kanan</span>
+            </div>
           </div>
         </div>
       )}
