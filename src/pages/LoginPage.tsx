@@ -26,10 +26,28 @@ const LoginPage: React.FC<LoginPageProps> = ({ onLoginSuccess }) => {
         },
         body: JSON.stringify({ username, password }),
       });
+
+      if (!response.ok) {
+        const contentType = response.headers.get('content-type');
+        let errorMessage = 'Invalid username or password';
+        
+        if (contentType?.includes('application/json')) {
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.message || errorMessage;
+          } catch {
+            errorMessage = `Server error: ${response.status}`;
+          }
+        } else {
+          errorMessage = `Server error: ${response.status}`;
+        }
+        
+        throw new Error(errorMessage);
+      }
       
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || 'Invalid username or password');
+      if (!data.token) {
+        throw new Error('No token received from server');
       }
 
       onLoginSuccess(data.token);

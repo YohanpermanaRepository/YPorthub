@@ -19,6 +19,29 @@ const initialFormData: Omit<Experience, 'id'> = {
     company: '', position: '', logo: '', description: '', startDate: '', endDate: '', certificationId: undefined
 };
 
+// Backend GET kemungkinan mengembalikan field relasi dengan nama berbeda.
+// Kita normalisasi agar form select tetap terisi dan payload update sesuai.
+function normalizeExperience(input: any): Experience {
+    const relatedCertificationId =
+        input?.certificationId !== undefined
+            ? input.certificationId
+            : input?.relatedCertificationId;
+
+    return {
+        ...input,
+        id: Number(input?.id),
+        company: String(input?.company ?? ''),
+        position: String(input?.position ?? ''),
+        logo: String(input?.logo ?? ''),
+        description: String(input?.description ?? ''),
+        startDate: String(input?.startDate ?? ''),
+        endDate: String(input?.endDate ?? ''),
+        certificationId: relatedCertificationId !== undefined && relatedCertificationId !== null
+            ? Number(relatedCertificationId)
+            : undefined,
+    };
+}
+
 // Helper: Ubah format tanggal API ke format input month (YYYY-MM)
 function normalizeToMonthInputValue(value: string): string {
     if (!value || value.toLowerCase() === 'present') return '';
@@ -72,7 +95,8 @@ const ExperienceManager: React.FC = () => {
             ]);
             if (!expResponse.ok || !certResponse.ok) throw new Error('Failed to fetch data');
             
-            setExperiences(await expResponse.json());
+            const expData = await expResponse.json();
+            setExperiences(Array.isArray(expData) ? expData.map(normalizeExperience) : []);
             setAllCertifications(await certResponse.json());
         } catch (err) {
             setError((err as Error).message);
@@ -152,12 +176,22 @@ const ExperienceManager: React.FC = () => {
             : `${API_BASE_URL}/experience`;
 
         try {
+            // Backend mengharapkan `relatedCertificationId`.
+            // Untuk case "None", kita paksa kirim `relatedCertificationId: null`
+            // supaya relasi benar-benar di-clear.
+            const payload: any = { ...formData };
+            payload.relatedCertificationId = payload.certificationId ?? null;
+            delete payload.certificationId;
+
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(payload)
             });
-            if (!response.ok) throw new Error(`Failed to save experience`);
+            if (!response.ok) {
+                const errData = await response.json().catch(() => null);
+                throw new Error(errData?.message || errData?.error || `Failed to save experience`);
+            }
             
             await fetchData();
             closeForm();
@@ -366,7 +400,7 @@ const ExperienceManager: React.FC = () => {
                                 <label className="block text-sm font-semibold text-gray-300 mb-2">Related Certification</label>
                                 <select 
                                     name="certificationId" 
-                                    value={formData.certificationId || ''} 
+                                    value={formData.certificationId !== undefined && formData.certificationId !== null ? String(formData.certificationId) : ''} 
                                     onChange={handleInputChange} 
                                     className="w-full px-4 py-2.5 bg-gray-800 border border-gray-700 rounded-xl text-white focus:ring-2 focus:ring-navy-500 outline-none transition"
                                 >

@@ -12,7 +12,8 @@ import {
   Star,
   XCircle,
   Loader2,
-  ImagePlus
+  ImagePlus,
+  Search
 } from "lucide-react";
 
 type ProjectFormState = Omit<Project, 'id' | 'technologies' | 'demoLink' | 'videoUrl'> & {
@@ -79,6 +80,7 @@ const ProjectManager: React.FC = () => {
     const [error, setError] = useState<string | null>(null);
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [editingProject, setEditingProject] = useState<Project | null>(null);
+    const [searchQuery, setSearchQuery] = useState('');
 
     const [formData, setFormData] = useState(initialFormData);
     const [newTechInput, setNewTechInput] = useState('');
@@ -359,110 +361,114 @@ const ProjectManager: React.FC = () => {
 
             {isFormOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 backdrop-blur-sm">
-                    <div className="bg-gray-800 p-4 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-gray-700">
+                    <div className="bg-gray-800 p-6 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-y-auto border border-gray-700">
                         <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
                             <Rocket className="w-5 h-5 text-gray-300" />
                             {editingProject ? 'Edit' : 'Add'} Project
                         </h3>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-200 mb-2">Project Title</label>
-                                <input name="title" value={formData.title} onChange={handleInputChange} placeholder="e.g., E-Commerce Platform" required className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"/>
-                            </div>
-                            
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-200 mb-2">Description</label>
-                                <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder="Describe your project..." required className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition resize-none" rows={3}></textarea>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-200 mb-2">Project Title</label>
+                                    <input name="title" value={formData.title} onChange={handleInputChange} placeholder="e.g., E-Commerce Platform" required className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"/>
+                                </div>
+                                
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-200 mb-2">GitHub Link</label>
                                     <input name="githubLink" value={formData.githubLink} onChange={handleInputChange} placeholder="https://github.com/..." required className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"/>
                                 </div>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-semibold text-gray-200 mb-2">Description</label>
+                                <textarea name="description" value={formData.description} onChange={handleInputChange} placeholder="Describe your project..." required className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition resize-none" rows={2}></textarea>
+                            </div>
+
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-semibold text-gray-200 mb-2">Demo Link</label>
                                     <input name="demoLink" value={formData.demoLink} onChange={handleInputChange} placeholder="https://demo.com (Optional)" className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"/>
                                 </div>
-                            </div>
-
-                            <div>
-                                <label className="block text-sm font-semibold text-gray-200 mb-2">YouTube Video URL</label>
-                                <input name="videoUrl" value={formData.videoUrl} onChange={handleInputChange} placeholder="https://youtube.com/... (Optional)" className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"/>
-                            </div>
-
-                            <div className="bg-gray-700 bg-opacity-50 rounded-xl p-3 border border-gray-600">
-                                <h4 className="font-semibold text-white mb-3">Technologies</h4>
-                                {/* Selected */}
-                                <label className="block text-xs text-gray-300 mb-2 font-medium">Selected</label>
-                                <div className="flex flex-wrap gap-1 p-2 bg-gray-800 rounded-lg min-h-[44px] mb-3">
-                                    {formData.technologies.length > 0 ? formData.technologies.map((techName) => (
-                                        <div key={techName} className="bg-blue-500 bg-opacity-20 text-blue-200 text-sm font-semibold px-3 py-1 rounded-full flex items-center gap-2 cursor-pointer hover:bg-opacity-30 transition" onClick={() => handleDeselectTechnology(techName)}>
-                                            <span>{techName}</span>
-                                            <button type="button" className="font-bold hover:text-red-300">&times;</button>
-                                        </div>
-                                    )) : <p className="text-gray-500 text-sm">Select or add technologies</p>}
-                                </div>
-
-                                {/* Available */}
-                                <label className="block text-xs text-gray-300 mb-2 font-medium">Available</label>
-                                <div className="flex flex-wrap gap-1 p-2 bg-gray-900 rounded-lg min-h-[44px] mb-3">
-                                    {availableTechnologies.length > 0 ? availableTechnologies.map((tech) => (
-                                        <div key={tech.id} className="bg-gray-600 hover:bg-gray-500 text-gray-100 text-sm font-semibold px-3 py-1 rounded-full cursor-pointer transition" onClick={() => handleSelectTechnology(tech.name)}>
-                                            {tech.name}
-                                        </div>
-                                    )) : <p className="text-gray-500 text-sm">All selected</p>}
-                                </div>
-
-                                {/* Add new */}
-                                <div className="flex gap-1">
-                                    <input
-                                        id="new-tech-input"
-                                        type="text"
-                                        value={newTechInput}
-                                        onChange={(e) => setNewTechInput(e.target.value)}
-                                        placeholder="Add new tech..."
-                                        className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-sm"
-                                    />
-                                    <button type="button" onClick={handleAddNewTechnology} className="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-3 py-1 rounded-lg transition-colors text-sm">
-                                        Add
-                                    </button>
+                                <div>
+                                    <label className="block text-sm font-semibold text-gray-200 mb-2">YouTube Video URL</label>
+                                    <input name="videoUrl" value={formData.videoUrl} onChange={handleInputChange} placeholder="https://youtube.com/... (Optional)" className="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"/>
                                 </div>
                             </div>
 
-                            <div className="bg-gray-700 bg-opacity-50 rounded-xl p-3 border border-gray-600">
-                                <div className="flex items-center justify-between mb-3">
-                                    <h4 className="font-semibold text-white text-sm">Project Images</h4>
-                                    <button type="button" onClick={handleAddImageField} className="text-blue-400 hover:text-blue-300 text-xs font-semibold transition-colors">
-                                        + Add Image
-                                    </button>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                                <div className="bg-gray-700 bg-opacity-50 rounded-xl p-3 border border-gray-600">
+                                    <h4 className="font-semibold text-white mb-3 text-sm">Technologies</h4>
+                                    {/* Selected */}
+                                    <label className="block text-xs text-gray-300 mb-2 font-medium">Selected</label>
+                                    <div className="flex flex-wrap gap-1 p-2 bg-gray-800 rounded-lg min-h-[44px] mb-3">
+                                        {formData.technologies.length > 0 ? formData.technologies.map((techName) => (
+                                            <div key={techName} className="bg-blue-500 bg-opacity-20 text-blue-200 text-xs font-semibold px-2 py-1 rounded-full flex items-center gap-2 cursor-pointer hover:bg-opacity-30 transition" onClick={() => handleDeselectTechnology(techName)}>
+                                                <span>{techName}</span>
+                                                <button type="button" className="font-bold hover:text-red-300">&times;</button>
+                                            </div>
+                                        )) : <p className="text-gray-500 text-xs">Select or add technologies</p>}
+                                    </div>
+
+                                    {/* Available */}
+                                    <label className="block text-xs text-gray-300 mb-2 font-medium">Available</label>
+                                    <div className="flex flex-wrap gap-1 p-2 bg-gray-900 rounded-lg min-h-[44px] mb-3 max-h-[120px] overflow-y-auto">
+                                        {availableTechnologies.length > 0 ? availableTechnologies.map((tech) => (
+                                            <div key={tech.id} className="bg-gray-600 hover:bg-gray-500 text-gray-100 text-xs font-semibold px-2 py-1 rounded-full cursor-pointer transition" onClick={() => handleSelectTechnology(tech.name)}>
+                                                {tech.name}
+                                            </div>
+                                        )) : <p className="text-gray-500 text-xs">All selected</p>}
+                                    </div>
+
+                                    {/* Add new */}
+                                    <div className="flex gap-1">
+                                        <input
+                                            id="new-tech-input"
+                                            type="text"
+                                            value={newTechInput}
+                                            onChange={(e) => setNewTechInput(e.target.value)}
+                                            placeholder="Add new tech..."
+                                            className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-sm"
+                                        />
+                                        <button type="button" onClick={handleAddNewTechnology} className="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-3 py-1 rounded-lg transition-colors text-sm">
+                                            Add
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    {formData.images.map((url, index) => (
-                                        <div key={index} className="flex gap-2 items-center">
-                                            <input 
-                                                value={url}
-                                                onChange={(e) => handleImageChange(index, e.target.value)}
-                                                placeholder="Paste image URL..."
-                                                className="flex-1 px-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
-                                            />
-                                            <input
-                                                type="file"
-                                                accept="image/*"
-                                                className="hidden"
-                                                ref={el => {fileInputRefs.current[index] = el}}
-                                                onChange={(e) => onSelectFile(e, index)}
-                                            />
-                                            <button type="button" onClick={() => fileInputRefs.current[index]?.click()} className="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-3 py-2 rounded-lg transition-colors disabled:opacity-50" disabled={uploadingImageIndex === index}>
-                                              {uploadingImageIndex === index ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                <Upload className="w-4 h-4" />
-                                                )}
-                                            </button>
-                                            <button type="button" onClick={() => handleRemoveImage(index)} className="text-red-400 hover:text-red-300 font-semibold px-3 py-2 rounded-lg transition-colors">🗑️</button>
-                                        </div>
-                                    ))}
+
+                                <div className="bg-gray-700 bg-opacity-50 rounded-xl p-3 border border-gray-600">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <h4 className="font-semibold text-white text-sm">Project Images</h4>
+                                        <button type="button" onClick={handleAddImageField} className="text-blue-400 hover:text-blue-300 text-xs font-semibold transition-colors">
+                                            + Add
+                                        </button>
+                                    </div>
+                                    <div className="space-y-2 max-h-[280px] overflow-y-auto">
+                                        {formData.images.map((url, index) => (
+                                            <div key={index} className="flex gap-2 items-start">
+                                                <input 
+                                                    value={url}
+                                                    onChange={(e) => handleImageChange(index, e.target.value)}
+                                                    placeholder="Paste image URL..."
+                                                    className="flex-1 px-3 py-1 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition text-sm"
+                                                />
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="hidden"
+                                                    ref={el => {fileInputRefs.current[index] = el}}
+                                                    onChange={(e) => onSelectFile(e, index)}
+                                                />
+                                                <button type="button" onClick={() => fileInputRefs.current[index]?.click()} className="bg-gray-600 hover:bg-gray-500 text-white font-semibold px-2 py-1 rounded-lg transition-colors disabled:opacity-50 text-xs" disabled={uploadingImageIndex === index}>
+                                                  {uploadingImageIndex === index ? (
+                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                                    ) : (
+                                                    <Upload className="w-3 h-3" />
+                                                    )}
+                                                </button>
+                                                <button type="button" onClick={() => handleRemoveImage(index)} className="text-red-400 hover:text-red-300 text-sm">🗑️</button>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             </div>
 
@@ -501,8 +507,27 @@ const ProjectManager: React.FC = () => {
                     </div>
                 )}
                 
+                {/* Search Bar */}
+                <div className="mb-6">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search projects by title or description..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="w-full px-4 py-2 pl-10 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                    />
+                  </div>
+                </div>
+                
                 <div className="space-y-4">
-                    {projects.map(p => (
+                    {projects
+                      .filter(p => 
+                        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        p.description.toLowerCase().includes(searchQuery.toLowerCase())
+                      )
+                      .map(p => (
                         <div key={p.id} className="bg-gray-700 bg-opacity-50 border border-gray-600 rounded-xl p-6 hover:bg-opacity-70 transition">
                             <div className="flex items-start justify-between gap-4">
                                 <div className="flex-1">
@@ -541,6 +566,14 @@ const ProjectManager: React.FC = () => {
                     {!isLoading && projects.length === 0 && (
                         <div className="text-center py-8">
                             <p className="text-gray-400">No projects yet. Add one to get started!</p>
+                        </div>
+                    )}
+                    {!isLoading && projects.length > 0 && projects.filter(p => 
+                        p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                        p.description.toLowerCase().includes(searchQuery.toLowerCase())
+                      ).length === 0 && (
+                        <div className="text-center py-8">
+                            <p className="text-gray-400">No projects found matching "{searchQuery}"</p>
                         </div>
                     )}
                 </div>

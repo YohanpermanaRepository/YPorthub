@@ -90,3 +90,12 @@ export interface ContactData {
   whatsapp: string | null;
   description: string;
 }
+
+export interface Activity {
+  id: number;
+  title: string;
+  description: string;
+  imageUrl?: string;
+  images: string[];
+  createdAt: string;
+}

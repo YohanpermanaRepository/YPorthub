@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ExperienceManager from '../components/ExperienceManager';
 import ProjectManager from '../components/ProjectManager';
 import EducationManager from '../components/EducationManager';
@@ -8,6 +8,7 @@ import AboutManager from '../components/AboutManager';
 import ContactManager from '../components/ContactManager';
 import AccountManager from '../components/AccountManager';
 import TechnologyManager from '../components/TechnologyManager';
+import ActivityManager from '../components/ActivityManager';
 
 import { User, FileText, Phone, Briefcase, Folder, GraduationCap, Award, Settings, LogOut, ChevronRight, ChevronLeft, Lock } from "lucide-react";
 
@@ -16,14 +17,40 @@ interface DashboardPageProps {
   authInfo: { username: string; role: string } | null;
 }
 
-type ManagedSection = 'Profile' | 'About' | 'Contact' | 'Experience' | 'Projects' | 'Education' | 'Certifications' | 'Technologies' | 'Account Settings';
+type ManagedSection =
+  | 'Profile'
+  | 'About'
+  | 'Contact'
+  | 'Experience'
+  | 'Projects'
+  | 'Education'
+  | 'Certifications'
+  | 'Technologies'
+  | 'Activities'
+  | 'Account Settings';
 
 const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout, authInfo }) => {
   const [activeSection, setActiveSection] = useState<ManagedSection>('Profile');
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const username = authInfo?.username || 'there';
   const role = authInfo?.role || 'unknown';
   const isReadOnly = role !== 'admin';
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+
+    if (isProfileMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isProfileMenuOpen]);
 
   const renderActiveSection = () => {
     switch (activeSection) {
@@ -35,6 +62,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout, authInfo }) => 
       case 'Education': return <EducationManager />;
       case 'Certifications': return <CertificationManager />;
       case 'Technologies': return <TechnologyManager />;
+      case 'Activities': return <ActivityManager />;
       case 'Account Settings': return <AccountManager />;
       default: return <ProfileManager />;
     }
@@ -49,6 +77,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout, authInfo }) => 
   { name: 'Education', icon: <GraduationCap className="w-5 h-5" /> },
   { name: 'Certifications', icon: <Award className="w-5 h-5" /> },
   { name: 'Technologies', icon: <Settings className="w-5 h-5" /> },
+    { name: 'Activities', icon: <Briefcase className="w-5 h-5" /> },
 ];
 
   return (
@@ -114,43 +143,63 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ onLogout, authInfo }) => 
         </nav>
 
         {/* Footer */}
-        <div className={`p-4 border-t border-gray-700 space-y-2 ${!sidebarOpen && 'flex flex-col items-center'}`}>
-          <button
-            onClick={() => setActiveSection('Account Settings')}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-all duration-200 ${!sidebarOpen && 'justify-center'}`}
-            title="Account Settings"
-          >
-            <Settings className="w-5 h-5 flex-shrink-0" />
-            {sidebarOpen && <span className="text-sm font-medium">Settings</span>}
-          </button>
-          <button
-            onClick={onLogout}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-red-500 hover:bg-opacity-20 hover:text-red-400 transition-all duration-200 ${!sidebarOpen && 'justify-center'}`}
-            title="Logout"
-          >
-            <LogOut className="w-5 h-5 flex-shrink-0" />
-            {sidebarOpen && <span className="text-sm font-medium">Logout</span>}
-          </button>
+        <div className={`p-4 border-t border-gray-700 ${!sidebarOpen && 'flex flex-col items-center'}`}>
+          <p className="text-xs text-gray-500 text-center">YPorthub Admin Panel</p>
         </div>
       </aside>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Header */}
-        <header className="bg-gradient-to-r from-gray-800 to-gray-800 border-b border-gray-700 px-6 py-4 shadow-lg">
+        <header className="bg-gradient-to-r from-gray-800 to-gray-800 border-b border-gray-700 px-6 py-4 shadow-lg relative">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-2xl font-bold text-white">{activeSection}</h2>
               <p className="text-gray-400 text-xs mt-0.5">Manage your portfolio content</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 relative" ref={profileMenuRef}>
               <div className="text-right">
                 <p className="text-white font-medium">{username}</p>
                 <p className="text-gray-400 text-sm capitalize">{role} Account</p>
               </div>
-              <div className="w-12 h-12 bg-gradient-to-br from-navy-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+              <button
+                onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
+                className="w-12 h-12 bg-gradient-to-br from-navy-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-200 hover:scale-105"
+              >
                 {username.charAt(0).toUpperCase()}
-              </div>
+              </button>
+
+              {/* Profile Dropdown Menu */}
+              {isProfileMenuOpen && (
+                <div className="absolute top-full right-0 mt-2 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-xl overflow-hidden z-50">
+                  <div className="px-4 py-3 border-b border-gray-700 bg-gray-750">
+                    <p className="text-white text-sm font-semibold">{username}</p>
+                    <p className="text-gray-400 text-xs mt-0.5 capitalize">{role} Account</p>
+                  </div>
+                  <div className="py-2">
+                    <button
+                      onClick={() => {
+                        setActiveSection('Account Settings');
+                        setIsProfileMenuOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 hover:text-white transition-colors duration-200 flex items-center gap-3"
+                    >
+                      <Settings className="w-4 h-4" />
+                      <span>Settings</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setIsProfileMenuOpen(false);
+                        onLogout();
+                      }}
+                      className="w-full px-4 py-2 text-left text-gray-300 hover:bg-red-500 hover:bg-opacity-20 hover:text-red-400 transition-colors duration-200 flex items-center gap-3 border-t border-gray-700"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
