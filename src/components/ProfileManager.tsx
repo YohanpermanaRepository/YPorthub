@@ -52,11 +52,10 @@ function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<File> 
                     reject(new Error('Canvas is empty'));
                     return;
                 }
-                const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+                const file = new File([blob], 'profile.png', { type: 'image/png' });
                 resolve(file);
             },
-            'image/jpeg',
-            0.95 // quality
+            'image/png'
         );
     });
 }

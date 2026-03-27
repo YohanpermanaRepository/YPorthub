@@ -42,11 +42,10 @@ function getCroppedImg(image: HTMLImageElement, crop: PixelCrop): Promise<File> 
                     reject(new Error('Canvas is empty'));
                     return;
                 }
-                const file = new File([blob], 'about-image.jpg', { type: 'image/jpeg' });
+                const file = new File([blob], 'about-image.png', { type: 'image/png' });
                 resolve(file);
             },
-            'image/jpeg',
-            0.95
+            'image/png'
         );
     });
 }
@@ -67,6 +66,9 @@ const AboutManager: React.FC = () => {
     const [croppingImageIndex, setCroppingImageIndex] = useState<number | null>(null);
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
     const [previewImageUrl, setPreviewImageUrl] = useState<string>('');
+    const [isUploadChoiceModalOpen, setIsUploadChoiceModalOpen] = useState(false);
+    const [pendingFile, setPendingFile] = useState<File | null>(null);
+    const [pendingImageIndex, setPendingImageIndex] = useState<number | null>(null);
 
     const fetchAbout = useCallback(async () => {
         setIsLoading(true);
@@ -141,17 +143,40 @@ const AboutManager: React.FC = () => {
 
     const onSelectFileForCrop = (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
         if (e.target.files && e.target.files.length > 0) {
+            setPendingFile(e.target.files[0]);
+            setPendingImageIndex(index);
+            setIsUploadChoiceModalOpen(true);
+            e.target.value = '';
+        }
+    };
+
+    const handleDirectUpload = async () => {
+        if (pendingFile && pendingImageIndex !== null) {
+            try {
+                await handleImageUpload(pendingFile, pendingImageIndex);
+                setIsUploadChoiceModalOpen(false);
+                setPendingFile(null);
+                setPendingImageIndex(null);
+            } catch (e) {
+                console.error(e);
+                setError("Could not upload the image.");
+            }
+        }
+    };
+
+    const handleOpenCropModal = () => {
+        if (pendingFile) {
             setCrop(undefined);
-            setCroppingImageIndex(index);
+            setCroppingImageIndex(pendingImageIndex);
 
             const reader = new FileReader();
             reader.addEventListener('load', () => {
                 setUpImg(reader.result?.toString() || '');
+                setIsUploadChoiceModalOpen(false);
                 setIsCropModalOpen(true);
             });
 
-            reader.readAsDataURL(e.target.files[0]);
-            e.target.value = '';
+            reader.readAsDataURL(pendingFile);
         }
     };
 
@@ -236,6 +261,47 @@ const AboutManager: React.FC = () => {
 
     return (
         <div className="bg-navy-900 text-white p-4 rounded-lg shadow">
+
+            {isUploadChoiceModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[100] p-4">
+                    <div className="bg-navy-900 text-white p-6 rounded-lg shadow-xl w-full max-w-sm">
+                        <h3 className="text-lg font-bold mb-4">
+                            Choose Upload Method
+                        </h3>
+                        <p className="text-gray-300 mb-6 text-sm">
+                            How would you like to upload your image?
+                        </p>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                type="button"
+                                onClick={handleDirectUpload}
+                                disabled={uploadingImageIndex !== null}
+                                className="bg-green-700 text-white font-semibold py-3 px-4 rounded-lg hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed w-full"
+                            >
+                                {uploadingImageIndex !== null ? 'Uploading...' : 'Upload Without Crop'}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleOpenCropModal}
+                                className="bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg hover:bg-blue-600 w-full"
+                            >
+                                Crop & Upload
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsUploadChoiceModalOpen(false);
+                                    setPendingFile(null);
+                                    setPendingImageIndex(null);
+                                }}
+                                className="bg-navy-700 text-white font-semibold py-3 px-4 rounded-lg hover:bg-navy-600 w-full"
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {isCropModalOpen && (
                 <div className="fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[100] p-4">
