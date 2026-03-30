@@ -1,12 +1,32 @@
+export interface ExperienceImage {
+  id: number;
+  imageUrl: string;
+  caption?: string | null;
+}
+
+export interface ExperienceCertification {
+  experienceId: number;
+  certificationId: number;
+  certification?: Certification;
+}
+
+export interface ExperienceProject {
+  experienceId: number;
+  projectId: number;
+  project?: Project;
+}
+
 export interface Experience {
   id: number;
   company: string;
   position: string;
-  logo: string;
-  description: string;
-  startDate: string;
-  endDate: string;
-  certificationId?: number;
+  logo?: string | null;
+  description?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  certifications?: ExperienceCertification[];
+  images?: ExperienceImage[];
+  projects?: ExperienceProject[];
 }
 
 export interface ProjectTechnology {

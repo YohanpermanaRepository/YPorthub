@@ -1,79 +1,114 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-    Briefcase, 
-    Plus, 
-    Trash, 
-    Upload, 
-    X, 
-    Calendar, 
-    Loader2, 
-    Check,
-    Search,
-    AlertCircle 
-} from 'lucide-react';
-import type { Experience, Certification } from '../types';
+import { Briefcase, Trash, X, Check, Search, AlertCircle, Upload, Loader2 } from 'lucide-react';
+import type { Experience, Certification, Project } from '../types';
 import { API_BASE_URL } from '../config';
 
-const initialFormData: Omit<Experience, 'id'> = {
-    company: '', position: '', logo: '', description: '', startDate: '', endDate: '', certificationId: undefined
-};
-
-// Backend GET kemungkinan mengembalikan field relasi dengan nama berbeda.
-// Kita normalisasi agar form select tetap terisi dan payload update sesuai.
 function normalizeExperience(input: any): Experience {
-    const relatedCertificationId =
-        input?.certificationId !== undefined
-            ? input.certificationId
-            : input?.relatedCertificationId;
+    const id = Number(input?.id);
 
     return {
-        ...input,
-        id: Number(input?.id),
+        id,
         company: String(input?.company ?? ''),
         position: String(input?.position ?? ''),
-        logo: String(input?.logo ?? ''),
-        description: String(input?.description ?? ''),
-        startDate: String(input?.startDate ?? ''),
-        endDate: String(input?.endDate ?? ''),
-        certificationId: relatedCertificationId !== undefined && relatedCertificationId !== null
-            ? Number(relatedCertificationId)
-            : undefined,
+        logo: input?.logo ?? null,
+        description: input?.description ?? null,
+        startDate: input?.startDate ?? null,
+        endDate: input?.endDate ?? null,
+        certifications: Array.isArray(input?.certifications)
+            ? input.certifications.map((c: any) => ({
+                experienceId: Number(c?.experienceId ?? id),
+                certificationId: Number(c?.certificationId ?? c?.certification?.id),
+                certification: c?.certification,
+            }))
+            : [],
+        images: Array.isArray(input?.images)
+            ? input.images.map((img: any) => ({
+                id: Number(img?.id),
+                imageUrl: String(img?.imageUrl ?? ''),
+                caption: img?.caption ?? null,
+            }))
+            : [],
+        projects: Array.isArray(input?.projects)
+            ? input.projects.map((p: any) => ({
+                experienceId: Number(p?.experienceId ?? id),
+                projectId: Number(p?.projectId ?? p?.project?.id),
+                project: p?.project,
+            }))
+            : [],
     };
 }
 
 // Helper: Ubah format tanggal API ke format input month (YYYY-MM)
-function normalizeToMonthInputValue(value: string): string {
-    if (!value || value.toLowerCase() === 'present') return '';
-    const trimmed = value.trim();
+function normalizeToMonthInputValue(value: string | null | undefined): string {
+    if (!value) return '';
+    const trimmed = String(value).trim();
+    if (!trimmed || trimmed.toLowerCase() === 'present') return '';
+
+    // Already month input
     if (/^\d{4}-\d{2}$/.test(trimmed)) return trimmed;
-    
-    const parsed = new Date(`${trimmed}-01`);
+
+    // Common format from backend: "February 2025"
+    const monthYearMatch = trimmed.match(/^([A-Za-z]+)\s+(\d{4})$/);
+    if (monthYearMatch) {
+        const monthStr = monthYearMatch[1];
+        const year = Number(monthYearMatch[2]);
+        const parsed = new Date(`${monthStr} 1, ${year}`);
+        if (!Number.isNaN(parsed.getTime())) {
+            const m = String(parsed.getMonth() + 1).padStart(2, '0');
+            return `${parsed.getFullYear()}-${m}`;
+        }
+    }
+
+    // Fallback (best effort)
+    const parsed = new Date(`${trimmed} 01`);
     if (!Number.isNaN(parsed.getTime())) {
         const y = parsed.getFullYear();
         const m = String(parsed.getMonth() + 1).padStart(2, '0');
         return `${y}-${m}`;
     }
+
     return '';
 }
 
-// Helper: Format tampilan tanggal (e.g., Jan 2020)
-function formatMonthYear(value: string): string {
-    if (!value) return '';
-    if (value.toLowerCase() === 'present') return 'Present';
-    
-    const trimmed = value.trim();
-    const [y, m] = trimmed.split('-').map(Number);
+function monthInputToMonthYear(value: string): string {
+    if (!/^\d{4}-\d{2}$/.test(value)) return value;
+    const [yStr, mStr] = value.split('-');
+    const y = Number(yStr);
+    const m = Number(mStr);
     const d = new Date(y, (m || 1) - 1, 1);
-    
-    if (!Number.isNaN(d.getTime())) {
-        return d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+    return d.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
+
+// Helper: Format tampilan tanggal (mis. "Feb 2025" atau biarkan apa adanya kalau bukan YYYY-MM)
+function formatMonthYear(value: string | null | undefined): string {
+    if (!value) return '';
+    const trimmed = String(value).trim();
+    if (!trimmed || trimmed.toLowerCase() === 'present') return 'Present';
+
+    if (/^\d{4}-\d{2}$/.test(trimmed)) {
+        const [y, m] = trimmed.split('-').map(Number);
+        const d = new Date(y, (m || 1) - 1, 1);
+        if (!Number.isNaN(d.getTime())) {
+            return d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+        }
     }
-    return value;
+
+    return trimmed;
+}
+
+function normalizeDateForApi(value: string | null | undefined): string | null {
+    if (!value) return null;
+    const trimmed = String(value).trim();
+    if (!trimmed) return null;
+    if (trimmed.toLowerCase() === 'present') return 'Present';
+    if (/^\d{4}-\d{2}$/.test(trimmed)) return monthInputToMonthYear(trimmed);
+    return trimmed; // assume already "February 2025"
 }
 
 const ExperienceManager: React.FC = () => {
     const [experiences, setExperiences] = useState<Experience[]>([]);
     const [allCertifications, setAllCertifications] = useState<Certification[]>([]);
+    const [allProjects, setAllProjects] = useState<Project[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -85,21 +120,112 @@ const ExperienceManager: React.FC = () => {
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [editingId, setEditingId] = useState<number | null>(null);
     const [editingData, setEditingData] = useState<Partial<Experience>>({});
-    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    // Editing relasi
+    const [editingCertificationIds, setEditingCertificationIds] = useState<Set<number>>(new Set());
+    const [editingProjectIds, setEditingProjectIds] = useState<Set<number>>(new Set());
+    const [editingImages, setEditingImages] = useState<Array<{ id?: number; imageUrl: string; caption: string }>>([]);
+    const [originalCertificationIds, setOriginalCertificationIds] = useState<Set<number>>(new Set());
+    const [originalProjectIds, setOriginalProjectIds] = useState<Set<number>>(new Set());
+    const [originalImagesSnapshot, setOriginalImagesSnapshot] = useState<Array<{ id?: number; imageUrl: string; caption: string }>>([]);
+    const [isEditingDetailLoading, setIsEditingDetailLoading] = useState(false);
+    const [uploadingImageIndex, setUploadingImageIndex] = useState<number | null>(null);
+    const fileInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+    // Summary counts untuk kolom tabel (fetch hanya untuk item di current page).
+    const countsCacheRef = useRef<Map<number, {
+        certCount: number;
+        certNames: string[];
+        projectCount: number;
+        imageCount: number;
+    }>>(new Map());
+    const [countsById, setCountsById] = useState<Record<number, {
+        certCount: number;
+        certNames: string[];
+        projectCount: number;
+        imageCount: number;
+    }>>({});
+    const [isPageCountsLoading, setIsPageCountsLoading] = useState(false);
+
+    const handleUploadExperienceImage = async (file: File, index: number) => {
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+            setError("Authentication error.");
+            return;
+        }
+
+        setUploadingImageIndex(index);
+        setError(null);
+
+        const uploadFormData = new FormData();
+        uploadFormData.append('image', file);
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: uploadFormData,
+            });
+
+            const data = await response.json().catch(() => null);
+            if (!response.ok) {
+                throw new Error(data?.message || 'Upload failed');
+            }
+
+            const url = data?.url;
+            if (!url) throw new Error('Upload did not return image url');
+
+            setEditingImages(prev =>
+                prev.map((it, i) => (i === index ? { ...it, imageUrl: url } : it))
+            );
+        } catch (err) {
+            setError((err as Error).message);
+        } finally {
+            setUploadingImageIndex(null);
+        }
+    };
 
     const fetchData = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         try {
-            const [expResponse, certResponse] = await Promise.all([
+            const [expResponse, certResponse, projectResponse] = await Promise.all([
                 fetch(`${API_BASE_URL}/experience`),
-                fetch(`${API_BASE_URL}/certifications`)
+                fetch(`${API_BASE_URL}/certifications`),
+                fetch(`${API_BASE_URL}/projects`),
             ]);
-            if (!expResponse.ok || !certResponse.ok) throw new Error('Failed to fetch data');
-            
-            const expData = await expResponse.json();
-            setExperiences(Array.isArray(expData) ? expData.map(normalizeExperience) : []);
-            setAllCertifications(await certResponse.json());
+            if (!expResponse.ok || !certResponse.ok || !projectResponse.ok) throw new Error('Failed to fetch data');
+
+            const [expJson, certJson, projectJson] = await Promise.all([
+                expResponse.json(),
+                certResponse.json(),
+                projectResponse.json(),
+            ]);
+
+            const expList = Array.isArray(expJson)
+                ? expJson
+                : Array.isArray(expJson?.value)
+                    ? expJson.value
+                    : [];
+            const certList = Array.isArray(certJson)
+                ? certJson
+                : Array.isArray(certJson?.value)
+                    ? certJson.value
+                    : [];
+            const projectList = Array.isArray(projectJson)
+                ? projectJson
+                : Array.isArray(projectJson?.value)
+                    ? projectJson.value
+                    : [];
+
+            setAllCertifications(certList);
+            setAllProjects(projectList);
+
+            // Jangan fetch detail untuk semua experience di awal (biar tidak berat).
+            // Relasi certifications/images/projects akan diambil saat user klik edit.
+            setExperiences(expList.map(normalizeExperience));
         } catch (err) {
             setError((err as Error).message);
         } finally {
@@ -111,24 +237,86 @@ const ExperienceManager: React.FC = () => {
         fetchData();
     }, [fetchData]);
 
-    const startEdit = (exp: Experience) => {
+    if (fileInputRefs.current.length !== editingImages.length) {
+        fileInputRefs.current.length = editingImages.length;
+    }
+
+    const startEdit = async (exp: Experience) => {
         setEditingId(exp.id);
         setEditingData({ ...exp });
+
+        // Relasi akan diload saat ini juga (biar page load awal tidak berat)
+        setIsEditingDetailLoading(true);
+        setError(null);
+
+        try {
+            const r = await fetch(`${API_BASE_URL}/experience/${exp.id}`);
+            if (!r.ok) throw new Error('Failed to load experience detail');
+            const detail = await r.json();
+            const normalized = normalizeExperience(detail);
+
+            const certIds = new Set(
+                (normalized.certifications ?? [])
+                    .map(c => Number(c.certificationId))
+                    .filter(n => !Number.isNaN(n))
+            );
+            const projectIds = new Set(
+                (normalized.projects ?? [])
+                    .map(p => Number(p.projectId))
+                    .filter(n => !Number.isNaN(n))
+            );
+            const imagesDraft = (normalized.images ?? []).map(img => ({
+                id: img.id,
+                imageUrl: img.imageUrl ?? '',
+                caption: img.caption ?? '',
+            }));
+
+            setEditingData(normalized);
+            setEditingCertificationIds(certIds);
+            setOriginalCertificationIds(new Set(certIds));
+            setEditingProjectIds(projectIds);
+            setOriginalProjectIds(new Set(projectIds));
+            setEditingImages(imagesDraft);
+            setOriginalImagesSnapshot(imagesDraft);
+        } catch (err) {
+            setError((err as Error).message);
+            // fallback: pakai state dari list yang sudah ada
+            setEditingCertificationIds(new Set());
+            setOriginalCertificationIds(new Set());
+            setEditingProjectIds(new Set());
+            setOriginalProjectIds(new Set());
+            setEditingImages([]);
+            setOriginalImagesSnapshot([]);
+        } finally {
+            setIsEditingDetailLoading(false);
+        }
     };
 
     const cancelEdit = () => {
         setEditingId(null);
         setEditingData({});
+        setEditingCertificationIds(new Set());
+        setEditingProjectIds(new Set());
+        setEditingImages([]);
+        setOriginalCertificationIds(new Set());
+        setOriginalProjectIds(new Set());
+        setOriginalImagesSnapshot([]);
+        setIsEditingDetailLoading(false);
     };
 
     const saveEdit = async () => {
-        if (!editingId || !editingData.position?.trim() || !editingData.company?.trim()) {
+        if (!editingId) return;
+
+        const company = String(editingData.company ?? '').trim();
+        const position = String(editingData.position ?? '').trim();
+        if (!company || !position) {
             setError("Please fill in all required fields");
             return;
         }
 
         setIsSaving(true);
         setError(null);
+
         const token = localStorage.getItem('authToken');
         if (!token) {
             setError("Authentication error.");
@@ -137,9 +325,15 @@ const ExperienceManager: React.FC = () => {
         }
 
         try {
-            const payload: any = { ...editingData };
-            payload.relatedCertificationId = payload.certificationId ?? null;
-            delete payload.certificationId;
+            // 1) Update basic experience fields
+            const payload = {
+                company,
+                position,
+                logo: String(editingData.logo ?? '').trim() || null,
+                description: String(editingData.description ?? '').trim() || null,
+                startDate: normalizeDateForApi(editingData.startDate as any),
+                endDate: normalizeDateForApi(editingData.endDate as any),
+            };
 
             const response = await fetch(`${API_BASE_URL}/experience/${editingId}`, {
                 method: 'PUT',
@@ -154,10 +348,137 @@ const ExperienceManager: React.FC = () => {
                 const errData = await response.text();
                 throw new Error(errData || 'Failed to update experience');
             }
-            
+
+            // 2) Sync certifications relations
+            const currentCertIds = originalCertificationIds;
+            const desiredCertIds = editingCertificationIds;
+
+            const toAddCerts = Array.from(desiredCertIds).filter(id => !currentCertIds.has(id));
+            const toRemoveCerts = Array.from(currentCertIds).filter(id => !desiredCertIds.has(id));
+
+            await Promise.all([
+                ...toAddCerts.map(id =>
+                    fetch(`${API_BASE_URL}/experience/${editingId}/certifications`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ certificationId: id }),
+                    }).then(r => {
+                        if (!r.ok) throw new Error(`Failed to link certification ${id}`);
+                    })
+                ),
+                ...toRemoveCerts.map(id =>
+                    fetch(`${API_BASE_URL}/experience/${editingId}/certifications/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }).then(r => {
+                        if (!r.ok) throw new Error(`Failed to unlink certification ${id}`);
+                    })
+                )
+            ]);
+
+            // 3) Sync projects relations
+            const currentProjectIds = originalProjectIds;
+            const desiredProjectIds = editingProjectIds;
+
+            const toAddProjects = Array.from(desiredProjectIds).filter(id => !currentProjectIds.has(id));
+            const toRemoveProjects = Array.from(currentProjectIds).filter(id => !desiredProjectIds.has(id));
+
+            await Promise.all([
+                ...toAddProjects.map(id =>
+                    fetch(`${API_BASE_URL}/experience/${editingId}/projects`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ projectId: id }),
+                    }).then(r => {
+                        if (!r.ok) throw new Error(`Failed to link project ${id}`);
+                    })
+                ),
+                ...toRemoveProjects.map(id =>
+                    fetch(`${API_BASE_URL}/experience/${editingId}/projects/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }).then(r => {
+                        if (!r.ok) throw new Error(`Failed to unlink project ${id}`);
+                    })
+                )
+            ]);
+
+            // 4) Sync images
+            const originalImageIds = new Set(
+                originalImagesSnapshot
+                    .map(img => img.id)
+                    .filter((id): id is number => typeof id === 'number' && !Number.isNaN(id))
+            );
+
+            const sanitizedDrafts = editingImages.map(d => ({
+                id: d.id,
+                imageUrl: String(d.imageUrl ?? '').trim(),
+                caption: String(d.caption ?? '').trim() || null,
+            }));
+
+            const keptExistingIds = new Set(
+                sanitizedDrafts.filter(d => d.id != null && d.imageUrl).map(d => d.id as number)
+            );
+
+            const toRemoveImages = Array.from(originalImageIds).filter(id => !keptExistingIds.has(id));
+
+            await Promise.all([
+                ...toRemoveImages.map(id =>
+                    fetch(`${API_BASE_URL}/experience/${editingId}/images/${id}`, {
+                        method: 'DELETE',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    }).then(r => {
+                        if (!r.ok) throw new Error(`Failed to delete image ${id}`);
+                    })
+                ),
+                ...sanitizedDrafts
+                    .filter(d => !d.id && d.imageUrl)
+                    .map(d =>
+                        fetch(`${API_BASE_URL}/experience/${editingId}/images`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                imageUrl: d.imageUrl,
+                                caption: d.caption,
+                            }),
+                        }).then(r => {
+                            if (!r.ok) throw new Error('Failed to add experience image');
+                        })
+                    ),
+                ...sanitizedDrafts
+                    .filter(d => d.id && d.imageUrl)
+                    .map(d =>
+                        fetch(`${API_BASE_URL}/experience/${editingId}/images/${d.id}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({
+                                imageUrl: d.imageUrl,
+                                caption: d.caption,
+                            }),
+                        }).then(r => {
+                            if (!r.ok) throw new Error(`Failed to update image ${d.id}`);
+                        })
+                    )
+            ]);
+
             await fetchData();
             setEditingId(null);
             setEditingData({});
+            setEditingCertificationIds(new Set());
+            setEditingProjectIds(new Set());
+            setEditingImages([]);
         } catch (err) {
             setError((err as Error).message);
         } finally {
@@ -233,7 +554,7 @@ const ExperienceManager: React.FC = () => {
     const filteredExperiences = experiences.filter(exp =>
         exp.position.toLowerCase().includes(searchQuery.toLowerCase()) ||
         exp.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        exp.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        String(exp.description ?? '').toLowerCase().includes(searchQuery.toLowerCase()) ||
         formatMonthYear(exp.startDate).toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -247,6 +568,10 @@ const ExperienceManager: React.FC = () => {
             compareB = compareB.toLowerCase();
         }
 
+        // Handle null/undefined values safely for comparison
+        if (compareA === null || compareA === undefined) compareA = '';
+        if (compareB === null || compareB === undefined) compareB = '';
+
         if (compareA < compareB) return sortOrder === 'asc' ? -1 : 1;
         if (compareA > compareB) return sortOrder === 'asc' ? 1 : -1;
         return 0;
@@ -257,6 +582,73 @@ const ExperienceManager: React.FC = () => {
     const startIdx = (currentPage - 1) * itemsPerPage;
     const endIdx = startIdx + itemsPerPage;
     const paginatedExperiences = sortedExperiences.slice(startIdx, endIdx);
+    const paginatedExperienceIdsKey = paginatedExperiences.map(e => e.id).join(',');
+
+    // Fetch summary counts untuk pengalaman di halaman saat ini (bukan semua).
+    useEffect(() => {
+        let cancelled = false;
+
+        const ids = paginatedExperiences.map(e => e.id);
+        const missing = ids.filter(id => !countsCacheRef.current.has(id));
+
+        if (missing.length === 0) return;
+        if (ids.length === 0) return;
+
+        const run = async () => {
+            setIsPageCountsLoading(true);
+            try {
+                const results = await Promise.all(
+                    missing.map(async (id) => {
+                        try {
+                            const r = await fetch(`${API_BASE_URL}/experience/${id}`);
+                            if (!r.ok) throw new Error('Failed to load detail');
+                            const d = await r.json();
+                            const certCount = Array.isArray(d.certifications) ? d.certifications.length : 0;
+                            const certNames = (Array.isArray(d.certifications) ? d.certifications : [])
+                                .map((c: any) => c?.certification?.name)
+                                .filter(Boolean)
+                                .slice(0, 2) as string[];
+                            const projectCount = Array.isArray(d.projects) ? d.projects.length : 0;
+                            const imageCount = Array.isArray(d.images) ? d.images.length : 0;
+                            return { id, certCount, certNames, projectCount, imageCount };
+                        } catch {
+                            return { id, certCount: 0, certNames: [], projectCount: 0, imageCount: 0 };
+                        }
+                    })
+                );
+
+                if (cancelled) return;
+
+                // Update cache + UI state
+                const next: typeof countsById = {};
+                for (const [k, v] of countsCacheRef.current.entries()) next[k] = v;
+
+                for (const item of results) {
+                    countsCacheRef.current.set(item.id, {
+                        certCount: item.certCount,
+                        certNames: item.certNames,
+                        projectCount: item.projectCount,
+                        imageCount: item.imageCount,
+                    });
+                    next[item.id] = {
+                        certCount: item.certCount,
+                        certNames: item.certNames,
+                        projectCount: item.projectCount,
+                        imageCount: item.imageCount,
+                    };
+                }
+
+                setCountsById(next);
+            } finally {
+                if (!cancelled) setIsPageCountsLoading(false);
+            }
+        };
+
+        void run();
+        return () => {
+            cancelled = true;
+        };
+    }, [paginatedExperienceIdsKey]);
 
     // Reset page if out of bounds
     useEffect(() => {
@@ -279,7 +671,7 @@ const ExperienceManager: React.FC = () => {
                             <>
                                 <button
                                     onClick={saveEdit}
-                                    disabled={isSaving}
+                                    disabled={isSaving || isEditingDetailLoading}
                                     className="flex items-center gap-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-1 px-4 rounded-lg text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     <Check className="w-4 h-4" />
@@ -380,7 +772,9 @@ const ExperienceManager: React.FC = () => {
                                     Duration {sortField === 'startDate' && (sortOrder === 'asc' ? '↑' : '↓')}
                                 </th>
                                 <th className="px-4 py-2 text-left text-gray-200 font-semibold">Description</th>
-                                <th className="px-4 py-2 text-left text-gray-200 font-semibold">Certification</th>
+                                <th className="px-4 py-2 text-left text-gray-200 font-semibold">Certifications</th>
+                                <th className="px-4 py-2 text-left text-gray-200 font-semibold">Projects</th>
+                                <th className="px-4 py-2 text-left text-gray-200 font-semibold">Images</th>
                                 <th className="px-4 py-2 text-center text-gray-200 font-semibold w-24">Actions</th>
                             </tr>
                         </thead>
@@ -466,16 +860,155 @@ const ExperienceManager: React.FC = () => {
                                                 />
                                             </td>
                                             <td className="px-4 py-2">
-                                                <select
-                                                    value={editingData.certificationId || ''}
-                                                    onChange={(e) => setEditingData(prev => ({ ...prev, certificationId: e.target.value ? parseInt(e.target.value) : undefined }))}
-                                                    className="w-auto bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 text-xs"
-                                                >
-                                                    <option value="">None</option>
+                                                <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
                                                     {allCertifications.map(cert => (
-                                                        <option key={cert.id} value={cert.id}>{cert.name}</option>
+                                                        <label key={cert.id} className="flex items-center gap-2 text-xs text-gray-200">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={editingCertificationIds.has(cert.id)}
+                                                                disabled={isEditingDetailLoading}
+                                                                onChange={() => {
+                                                                    setEditingCertificationIds(prev => {
+                                                                        const next = new Set(prev);
+                                                                        if (next.has(cert.id)) next.delete(cert.id);
+                                                                        else next.add(cert.id);
+                                                                        return next;
+                                                                    });
+                                                                }}
+                                                                className="w-3 h-3"
+                                                            />
+                                                            <span className="truncate" title={cert.name}>{cert.name}</span>
+                                                        </label>
                                                     ))}
-                                                </select>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                                                    {allProjects.map(project => (
+                                                        <label key={project.id} className="flex items-center gap-2 text-xs text-gray-200">
+                                                            <input
+                                                                type="checkbox"
+                                                                checked={editingProjectIds.has(project.id)}
+                                                                disabled={isEditingDetailLoading}
+                                                                onChange={() => {
+                                                                    setEditingProjectIds(prev => {
+                                                                        const next = new Set(prev);
+                                                                        if (next.has(project.id)) next.delete(project.id);
+                                                                        else next.add(project.id);
+                                                                        return next;
+                                                                    });
+                                                                }}
+                                                                className="w-3 h-3"
+                                                            />
+                                                            <span className="truncate" title={project.title}>{project.title}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-2">
+                                                <div className="space-y-2">
+                                                    {editingImages.map((img, idx) => (
+                                                        <div key={img.id ?? idx} className="border border-gray-600 rounded-lg bg-gray-700/30 p-2 space-y-1">
+                                                            <div className="flex items-center justify-between gap-2">
+                                                                <span className="text-[11px] text-gray-300 whitespace-nowrap">Image {idx + 1}</span>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => setEditingImages(prev => prev.filter((_, i) => i !== idx))}
+                                                                    disabled={isEditingDetailLoading}
+                                                                    className="text-red-400 hover:text-red-300 transition"
+                                                                    title="Remove image"
+                                                                >
+                                                                    <Trash className="w-4 h-4" />
+                                                                </button>
+                                                            </div>
+
+                                                            {img.imageUrl ? (
+                                                                <div className="flex items-center gap-2">
+                                                                    <img src={img.imageUrl} alt={`image-${idx + 1}`} className="w-10 h-10 rounded object-cover bg-gray-800 border border-gray-600" />
+                                                                    <input
+                                                                        type="text"
+                                                                        value={img.imageUrl}
+                                                                        disabled={isEditingDetailLoading}
+                                                                        onChange={(e) => {
+                                                                            const nextValue = e.target.value;
+                                                                            setEditingImages(prev => prev.map((it, i) => (i === idx ? { ...it, imageUrl: nextValue } : it)));
+                                                                        }}
+                                                                        placeholder="Image URL"
+                                                                        className="flex-1 bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 text-xs"
+                                                                    />
+                                                                </div>
+                                                            ) : (
+                                                                <input
+                                                                    type="text"
+                                                                    value={img.imageUrl}
+                                                                    disabled={isEditingDetailLoading}
+                                                                    onChange={(e) => {
+                                                                        const nextValue = e.target.value;
+                                                                        setEditingImages(prev => prev.map((it, i) => (i === idx ? { ...it, imageUrl: nextValue } : it)));
+                                                                    }}
+                                                                    placeholder="Image URL"
+                                                                    className="w-full bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 text-xs"
+                                                                />
+                                                            )}
+
+                                                            <input
+                                                                type="text"
+                                                                value={img.caption}
+                                                                disabled={isEditingDetailLoading}
+                                                                onChange={(e) => {
+                                                                    const nextCaption = e.target.value;
+                                                                    setEditingImages(prev => prev.map((it, i) => (i === idx ? { ...it, caption: nextCaption } : it)));
+                                                                }}
+                                                                placeholder="Caption (optional)"
+                                                                className="w-full bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 text-xs"
+                                                            />
+
+                                                            <div className="flex items-center gap-2 pt-1">
+                                                                <input
+                                                                    type="file"
+                                                                    accept="image/*"
+                                                                    className="hidden"
+                                                                    ref={el => {
+                                                                        fileInputRefs.current[idx] = el;
+                                                                    }}
+                                                                    onChange={(e) => {
+                                                                        const f = e.target.files?.[0];
+                                                                        if (f) void handleUploadExperienceImage(f, idx);
+                                                                        e.target.value = '';
+                                                                    }}
+                                                                />
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => fileInputRefs.current[idx]?.click()}
+                                                                    disabled={uploadingImageIndex !== null || isEditingDetailLoading}
+                                                                    className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded text-xs text-white"
+                                                                    title="Upload to Cloudinary"
+                                                                >
+                                                                    {uploadingImageIndex === idx ? (
+                                                                        <>
+                                                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                                                            Uploading
+                                                                        </>
+                                                                    ) : (
+                                                                        <>
+                                                                            <Upload className="w-3 h-3" />
+                                                                            Upload
+                                                                        </>
+                                                                    )}
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setEditingImages(prev => [...prev, { imageUrl: '', caption: '' }])}
+                                                        disabled={isEditingDetailLoading}
+                                                        className="text-xs text-gray-300 hover:text-white transition"
+                                                    >
+                                                        + Add Image
+                                                    </button>
+                                                </div>
                                             </td>
                                             <td className="px-4 py-2 text-center">
                                                 <button
@@ -489,28 +1022,53 @@ const ExperienceManager: React.FC = () => {
                                         </>
                                     ) : (
                                         <>
-                                            <td className="px-4 py-2 text-white font-medium cursor-pointer hover:bg-gray-600/50 hover:text-blue-300 transition" onClick={() => startEdit(exp)}>
+                                            <td className="px-4 py-2 text-white font-medium cursor-pointer hover:bg-gray-600/50 hover:text-blue-300 transition" onClick={() => void startEdit(exp)}>
                                                 {exp.position}
                                             </td>
-                                            <td className="px-4 py-2 text-gray-300 cursor-pointer hover:bg-gray-600/50 hover:text-blue-300 transition" onClick={() => startEdit(exp)}>
+                                            <td className="px-4 py-2 text-gray-300 cursor-pointer hover:bg-gray-600/50 hover:text-blue-300 transition" onClick={() => void startEdit(exp)}>
                                                 {exp.company}
                                             </td>
-                                            <td className="px-4 py-2 text-center cursor-pointer" onClick={() => startEdit(exp)}>
+                                            <td className="px-4 py-2 text-center cursor-pointer" onClick={() => void startEdit(exp)}>
                                                 {exp.logo && (
                                                     <img src={exp.logo} alt={exp.company} className="w-6 h-6 rounded mx-auto" title={exp.company} />
                                                 )}
                                             </td>
-                                            <td className="px-4 py-2 text-gray-300 cursor-pointer hover:bg-gray-600/50 hover:text-blue-300 transition text-xs" onClick={() => startEdit(exp)}>
+                                            <td className="px-4 py-2 text-gray-300 cursor-pointer hover:bg-gray-600/50 hover:text-blue-300 transition text-xs" onClick={() => void startEdit(exp)}>
                                                 {formatMonthYear(exp.startDate)} — {formatMonthYear(exp.endDate)}
                                             </td>
-                                            <td className="px-4 py-2 text-gray-400 cursor-pointer hover:bg-gray-600/50 text-xs line-clamp-2" onClick={() => startEdit(exp)}>
+                                            <td className="px-4 py-2 text-gray-400 cursor-pointer hover:bg-gray-600/50 text-xs line-clamp-2" onClick={() => void startEdit(exp)}>
                                                 {exp.description}
                                             </td>
-                                            <td className="px-4 py-2 text-gray-300 text-xs cursor-pointer hover:bg-gray-600/50" onClick={() => startEdit(exp)}>
-                                                {exp.certificationId ? (
-                                                    allCertifications.find(c => c.id === exp.certificationId)?.name || '—'
+                                            <td className="px-4 py-2 text-gray-300 text-xs cursor-pointer hover:bg-gray-600/50" onClick={() => void startEdit(exp)}>
+                                                {countsById[exp.id] ? (
+                                                    countsById[exp.id].certNames.length > 0 ? (
+                                                        <>
+                                                            {countsById[exp.id].certNames.join(', ')}
+                                                            {countsById[exp.id].certCount > countsById[exp.id].certNames.length
+                                                                ? ` +${countsById[exp.id].certCount - countsById[exp.id].certNames.length} more`
+                                                                : ''}
+                                                        </>
+                                                    ) : (
+                                                        countsById[exp.id].certCount > 0
+                                                            ? countsById[exp.id].certCount
+                                                            : <span className="text-gray-500">—</span>
+                                                    )
                                                 ) : (
-                                                    <span className="text-gray-500">—</span>
+                                                    <span className="text-gray-500">{isPageCountsLoading ? '...' : '—'}</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-2 text-gray-300 text-xs cursor-pointer hover:bg-gray-600/50" onClick={() => void startEdit(exp)}>
+                                                {countsById[exp.id] ? (
+                                                    countsById[exp.id].projectCount > 0 ? countsById[exp.id].projectCount : '—'
+                                                ) : (
+                                                    <span className="text-gray-500">{isPageCountsLoading ? '...' : '—'}</span>
+                                                )}
+                                            </td>
+                                            <td className="px-4 py-2 text-gray-300 text-xs cursor-pointer hover:bg-gray-600/50" onClick={() => void startEdit(exp)}>
+                                                {countsById[exp.id] ? (
+                                                    countsById[exp.id].imageCount > 0 ? countsById[exp.id].imageCount : '—'
+                                                ) : (
+                                                    <span className="text-gray-500">{isPageCountsLoading ? '...' : '—'}</span>
                                                 )}
                                             </td>
                                             <td className="px-4 py-2 text-center">
