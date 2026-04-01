@@ -1,14 +1,18 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     BookOpen,
+    GraduationCap,
     Plus,
+    Pencil,
     Trash,
+    Trash2,
     Upload,
     X,
     Loader2,
     AlertCircle,
     Search,
-    Check
+    Check,
+    CheckCircle2
 } from 'lucide-react';
 import type { EducationData, Publication, Achievement } from '../types';
 import { API_BASE_URL } from '../config';
@@ -491,8 +495,8 @@ const EducationManager: React.FC = () => {
                                 <button type="button" onClick={closeForm} className="flex-1 py-2 px-4 bg-gray-800 hover:bg-gray-700 text-white font-semibold rounded-lg transition-colors text-sm">
                                     Cancel
                                 </button>
-                                <button type="submit" disabled={isSubmitting} className="flex-[2] py-2 px-4 bg-navy-600 hover:bg-navy-500 text-white font-bold rounded-lg transition-all shadow-lg flex items-center justify-center gap-1 disabled:opacity-50 text-sm">
-                                    {isSubmitting ? <Loader2 className="animate-spin" size={20} /> : null}
+                                <button type="submit" disabled={isSaving} className="flex-[2] py-2 px-4 bg-navy-600 hover:bg-navy-500 text-white font-bold rounded-lg transition-all shadow-lg flex items-center justify-center gap-1 disabled:opacity-50 text-sm">
+                                    {isSaving ? <Loader2 className="animate-spin" size={20} /> : null}
                                     {editingEducation ? 'Update Education' : 'Save Education'}
                                 </button>
                             </div>
