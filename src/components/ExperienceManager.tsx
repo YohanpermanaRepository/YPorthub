@@ -119,6 +119,7 @@ const ExperienceManager: React.FC = () => {
     const [sortField, setSortField] = useState<'position' | 'company' | 'startDate'>('startDate');
     const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
     const [editingId, setEditingId] = useState<number | null>(null);
+    const [isCreating, setIsCreating] = useState(false);
     const [editingData, setEditingData] = useState<Partial<Experience>>({});
 
     // Editing relasi
@@ -241,6 +242,26 @@ const ExperienceManager: React.FC = () => {
         fileInputRefs.current.length = editingImages.length;
     }
 
+    const startCreate = async () => {
+        setIsCreating(true);
+        setEditingId(null);
+        setEditingData({
+            company: '',
+            position: '',
+            logo: null,
+            description: null,
+            startDate: null,
+            endDate: null,
+        });
+        setEditingCertificationIds(new Set());
+        setEditingProjectIds(new Set());
+        setEditingImages([]);
+        setOriginalCertificationIds(new Set());
+        setOriginalProjectIds(new Set());
+        setOriginalImagesSnapshot([]);
+        setIsEditingDetailLoading(false);
+    };
+
     const startEdit = async (exp: Experience) => {
         setEditingId(exp.id);
         setEditingData({ ...exp });
@@ -294,6 +315,7 @@ const ExperienceManager: React.FC = () => {
 
     const cancelEdit = () => {
         setEditingId(null);
+        setIsCreating(false);
         setEditingData({});
         setEditingCertificationIds(new Set());
         setEditingProjectIds(new Set());
@@ -305,184 +327,294 @@ const ExperienceManager: React.FC = () => {
     };
 
     const saveEdit = async () => {
-        if (!editingId) return;
-
-        const company = String(editingData.company ?? '').trim();
-        const position = String(editingData.position ?? '').trim();
-        if (!company || !position) {
-            setError("Please fill in all required fields");
-            return;
-        }
-
-        setIsSaving(true);
-        setError(null);
-
-        const token = localStorage.getItem('authToken');
-        if (!token) {
-            setError("Authentication error.");
-            setIsSaving(false);
-            return;
-        }
-
-        try {
-            // 1) Update basic experience fields
-            const payload = {
-                company,
-                position,
-                logo: String(editingData.logo ?? '').trim() || null,
-                description: String(editingData.description ?? '').trim() || null,
-                startDate: normalizeDateForApi(editingData.startDate as any),
-                endDate: normalizeDateForApi(editingData.endDate as any),
-            };
-
-            const response = await fetch(`${API_BASE_URL}/experience/${editingId}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!response.ok) {
-                const errData = await response.text();
-                throw new Error(errData || 'Failed to update experience');
+        if (isCreating && !editingId) {
+            // CREATE NEW EXPERIENCE
+            const company = String(editingData.company ?? '').trim();
+            const position = String(editingData.position ?? '').trim();
+            if (!company || !position) {
+                setError("Please fill in all required fields");
+                return;
             }
 
-            // 2) Sync certifications relations
-            const currentCertIds = originalCertificationIds;
-            const desiredCertIds = editingCertificationIds;
+            setIsSaving(true);
+            setError(null);
 
-            const toAddCerts = Array.from(desiredCertIds).filter(id => !currentCertIds.has(id));
-            const toRemoveCerts = Array.from(currentCertIds).filter(id => !desiredCertIds.has(id));
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                setError("Authentication error.");
+                setIsSaving(false);
+                return;
+            }
 
-            await Promise.all([
-                ...toAddCerts.map(id =>
-                    fetch(`${API_BASE_URL}/experience/${editingId}/certifications`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ certificationId: id }),
-                    }).then(r => {
-                        if (!r.ok) throw new Error(`Failed to link certification ${id}`);
-                    })
-                ),
-                ...toRemoveCerts.map(id =>
-                    fetch(`${API_BASE_URL}/experience/${editingId}/certifications/${id}`, {
-                        method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    }).then(r => {
-                        if (!r.ok) throw new Error(`Failed to unlink certification ${id}`);
-                    })
-                )
-            ]);
+            try {
+                const payload = {
+                    company,
+                    position,
+                    logo: String(editingData.logo ?? '').trim() || null,
+                    description: String(editingData.description ?? '').trim() || null,
+                    startDate: normalizeDateForApi(editingData.startDate as any),
+                    endDate: normalizeDateForApi(editingData.endDate as any),
+                };
 
-            // 3) Sync projects relations
-            const currentProjectIds = originalProjectIds;
-            const desiredProjectIds = editingProjectIds;
+                const response = await fetch(`${API_BASE_URL}/experience`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
 
-            const toAddProjects = Array.from(desiredProjectIds).filter(id => !currentProjectIds.has(id));
-            const toRemoveProjects = Array.from(currentProjectIds).filter(id => !desiredProjectIds.has(id));
+                if (!response.ok) {
+                    const errData = await response.text();
+                    throw new Error(errData || 'Failed to create experience');
+                }
 
-            await Promise.all([
-                ...toAddProjects.map(id =>
-                    fetch(`${API_BASE_URL}/experience/${editingId}/projects`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ projectId: id }),
-                    }).then(r => {
-                        if (!r.ok) throw new Error(`Failed to link project ${id}`);
-                    })
-                ),
-                ...toRemoveProjects.map(id =>
-                    fetch(`${API_BASE_URL}/experience/${editingId}/projects/${id}`, {
-                        method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    }).then(r => {
-                        if (!r.ok) throw new Error(`Failed to unlink project ${id}`);
-                    })
-                )
-            ]);
+                const newExp = await response.json();
+                const newId = newExp.id;
 
-            // 4) Sync images
-            const originalImageIds = new Set(
-                originalImagesSnapshot
-                    .map(img => img.id)
-                    .filter((id): id is number => typeof id === 'number' && !Number.isNaN(id))
-            );
+                // Add certifications, projects, and images to the newly created experience
+                const desiredCertIds = editingCertificationIds;
+                const toAddCerts = Array.from(desiredCertIds);
+                const desiredProjectIds = editingProjectIds;
+                const toAddProjects = Array.from(desiredProjectIds);
+                const imagesToAdd = editingImages.filter(img => img.imageUrl);
 
-            const sanitizedDrafts = editingImages.map(d => ({
-                id: d.id,
-                imageUrl: String(d.imageUrl ?? '').trim(),
-                caption: String(d.caption ?? '').trim() || null,
-            }));
-
-            const keptExistingIds = new Set(
-                sanitizedDrafts.filter(d => d.id != null && d.imageUrl).map(d => d.id as number)
-            );
-
-            const toRemoveImages = Array.from(originalImageIds).filter(id => !keptExistingIds.has(id));
-
-            await Promise.all([
-                ...toRemoveImages.map(id =>
-                    fetch(`${API_BASE_URL}/experience/${editingId}/images/${id}`, {
-                        method: 'DELETE',
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    }).then(r => {
-                        if (!r.ok) throw new Error(`Failed to delete image ${id}`);
-                    })
-                ),
-                ...sanitizedDrafts
-                    .filter(d => !d.id && d.imageUrl)
-                    .map(d =>
-                        fetch(`${API_BASE_URL}/experience/${editingId}/images`, {
+                await Promise.all([
+                    ...toAddCerts.map(id =>
+                        fetch(`${API_BASE_URL}/experience/${newId}/certifications`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ certificationId: id }),
+                        }).then(r => {
+                            if (!r.ok) throw new Error(`Failed to link certification ${id}`);
+                        })
+                    ),
+                    ...toAddProjects.map(id =>
+                        fetch(`${API_BASE_URL}/experience/${newId}/projects`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ projectId: id }),
+                        }).then(r => {
+                            if (!r.ok) throw new Error(`Failed to link project ${id}`);
+                        })
+                    ),
+                    ...imagesToAdd.map(img =>
+                        fetch(`${API_BASE_URL}/experience/${newId}/images`, {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Authorization': `Bearer ${token}`
                             },
                             body: JSON.stringify({
-                                imageUrl: d.imageUrl,
-                                caption: d.caption,
+                                imageUrl: img.imageUrl,
+                                caption: img.caption,
                             }),
                         }).then(r => {
                             if (!r.ok) throw new Error('Failed to add experience image');
                         })
-                    ),
-                ...sanitizedDrafts
-                    .filter(d => d.id && d.imageUrl)
-                    .map(d =>
-                        fetch(`${API_BASE_URL}/experience/${editingId}/images/${d.id}`, {
-                            method: 'PUT',
+                    )
+                ]);
+
+                await fetchData();
+                setEditingId(null);
+                setIsCreating(false);
+                setEditingData({});
+                setEditingCertificationIds(new Set());
+                setEditingProjectIds(new Set());
+                setEditingImages([]);
+            } catch (err) {
+                setError((err as Error).message);
+            } finally {
+                setIsSaving(false);
+            }
+        } else if (!isCreating && editingId) {
+            // EDIT EXISTING EXPERIENCE
+            if (!editingId) return;
+
+            const company = String(editingData.company ?? '').trim();
+            const position = String(editingData.position ?? '').trim();
+            if (!company || !position) {
+                setError("Please fill in all required fields");
+                return;
+            }
+
+            setIsSaving(true);
+            setError(null);
+
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+                setError("Authentication error.");
+                setIsSaving(false);
+                return;
+            }
+
+            try {
+                // 1) Update basic experience fields
+                const payload = {
+                    company,
+                    position,
+                    logo: String(editingData.logo ?? '').trim() || null,
+                    description: String(editingData.description ?? '').trim() || null,
+                    startDate: normalizeDateForApi(editingData.startDate as any),
+                    endDate: normalizeDateForApi(editingData.endDate as any),
+                };
+
+                const response = await fetch(`${API_BASE_URL}/experience/${editingId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errData = await response.text();
+                    throw new Error(errData || 'Failed to update experience');
+                }
+
+                // 2) Sync certifications relations
+                const currentCertIds = originalCertificationIds;
+                const desiredCertIds = editingCertificationIds;
+
+                const toAddCerts = Array.from(desiredCertIds).filter(id => !currentCertIds.has(id));
+                const toRemoveCerts = Array.from(currentCertIds).filter(id => !desiredCertIds.has(id));
+
+                await Promise.all([
+                    ...toAddCerts.map(id =>
+                        fetch(`${API_BASE_URL}/experience/${editingId}/certifications`, {
+                            method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Authorization': `Bearer ${token}`
                             },
-                            body: JSON.stringify({
-                                imageUrl: d.imageUrl,
-                                caption: d.caption,
-                            }),
+                            body: JSON.stringify({ certificationId: id }),
                         }).then(r => {
-                            if (!r.ok) throw new Error(`Failed to update image ${d.id}`);
+                            if (!r.ok) throw new Error(`Failed to link certification ${id}`);
+                        })
+                    ),
+                    ...toRemoveCerts.map(id =>
+                        fetch(`${API_BASE_URL}/experience/${editingId}/certifications/${id}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        }).then(r => {
+                            if (!r.ok) throw new Error(`Failed to unlink certification ${id}`);
                         })
                     )
-            ]);
+                ]);
 
-            await fetchData();
-            setEditingId(null);
-            setEditingData({});
-            setEditingCertificationIds(new Set());
-            setEditingProjectIds(new Set());
-            setEditingImages([]);
-        } catch (err) {
-            setError((err as Error).message);
-        } finally {
-            setIsSaving(false);
+                // 3) Sync projects relations
+                const currentProjectIds = originalProjectIds;
+                const desiredProjectIds = editingProjectIds;
+
+                const toAddProjects = Array.from(desiredProjectIds).filter(id => !currentProjectIds.has(id));
+                const toRemoveProjects = Array.from(currentProjectIds).filter(id => !desiredProjectIds.has(id));
+
+                await Promise.all([
+                    ...toAddProjects.map(id =>
+                        fetch(`${API_BASE_URL}/experience/${editingId}/projects`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${token}`
+                            },
+                            body: JSON.stringify({ projectId: id }),
+                        }).then(r => {
+                            if (!r.ok) throw new Error(`Failed to link project ${id}`);
+                        })
+                    ),
+                    ...toRemoveProjects.map(id =>
+                        fetch(`${API_BASE_URL}/experience/${editingId}/projects/${id}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        }).then(r => {
+                            if (!r.ok) throw new Error(`Failed to unlink project ${id}`);
+                        })
+                    )
+                ]);
+
+                // 4) Sync images
+                const originalImageIds = new Set(
+                    originalImagesSnapshot
+                        .map(img => img.id)
+                        .filter((id): id is number => typeof id === 'number' && !Number.isNaN(id))
+                );
+
+                const sanitizedDrafts = editingImages.map(d => ({
+                    id: d.id,
+                    imageUrl: String(d.imageUrl ?? '').trim(),
+                    caption: String(d.caption ?? '').trim() || null,
+                }));
+
+                const keptExistingIds = new Set(
+                    sanitizedDrafts.filter(d => d.id != null && d.imageUrl).map(d => d.id as number)
+                );
+
+                const toRemoveImages = Array.from(originalImageIds).filter(id => !keptExistingIds.has(id));
+
+                await Promise.all([
+                    ...toRemoveImages.map(id =>
+                        fetch(`${API_BASE_URL}/experience/${editingId}/images/${id}`, {
+                            method: 'DELETE',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        }).then(r => {
+                            if (!r.ok) throw new Error(`Failed to delete image ${id}`);
+                        })
+                    ),
+                    ...sanitizedDrafts
+                        .filter(d => !d.id && d.imageUrl)
+                        .map(d =>
+                            fetch(`${API_BASE_URL}/experience/${editingId}/images`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                    imageUrl: d.imageUrl,
+                                    caption: d.caption,
+                                }),
+                            }).then(r => {
+                                if (!r.ok) throw new Error('Failed to add experience image');
+                            })
+                        ),
+                    ...sanitizedDrafts
+                        .filter(d => d.id && d.imageUrl)
+                        .map(d =>
+                            fetch(`${API_BASE_URL}/experience/${editingId}/images/${d.id}`, {
+                                method: 'PUT',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                    imageUrl: d.imageUrl,
+                                    caption: d.caption,
+                                }),
+                            }).then(r => {
+                                if (!r.ok) throw new Error(`Failed to update image ${d.id}`);
+                            })
+                        )
+                ]);
+
+                await fetchData();
+                setEditingId(null);
+                setEditingData({});
+                setEditingCertificationIds(new Set());
+                setEditingProjectIds(new Set());
+                setEditingImages([]);
+            } catch (err) {
+                setError((err as Error).message);
+            } finally {
+                setIsSaving(false);
+            }
         }
     };
 
@@ -667,7 +799,15 @@ const ExperienceManager: React.FC = () => {
                         Experience
                     </h2>
                     <div className="flex gap-2">
-                        {editingId && (
+                        {!isCreating && !editingId && (
+                            <button
+                                onClick={startCreate}
+                                className="flex items-center gap-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-1 px-4 rounded-lg text-sm"
+                            >
+                                + Create New
+                            </button>
+                        )}
+                        {(editingId || isCreating) && (
                             <>
                                 <button
                                     onClick={saveEdit}
@@ -687,7 +827,7 @@ const ExperienceManager: React.FC = () => {
                                 </button>
                             </>
                         )}
-                        {selectedIds.size > 0 && (
+                        {selectedIds.size > 0 && !isCreating && !editingId && (
                             <button
                                 onClick={deleteSelected}
                                 className="flex items-center gap-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-semibold py-1 px-3 rounded-lg text-sm"
@@ -779,6 +919,234 @@ const ExperienceManager: React.FC = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-700">
+                            {isCreating && (
+                                <tr className="bg-blue-900/20 border-b-2 border-blue-500/50">
+                                    <td className="px-4 py-2 text-center">
+                                        <input
+                                            type="checkbox"
+                                            disabled
+                                            className="cursor-not-allowed w-4 h-4 rounded border border-gray-500 bg-gray-600"
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center text-gray-400 font-medium w-12">
+                                        new
+                                    </td>
+                                    <td className="px-4 py-2">
+                                        <input
+                                            type="text"
+                                            value={editingData.position || ''}
+                                            placeholder="Job Title"
+                                            onChange={(e) => setEditingData(prev => ({ ...prev, position: e.target.value }))}
+                                            className="w-auto bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500"
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2">
+                                        <input
+                                            type="text"
+                                            value={editingData.company || ''}
+                                            placeholder="Company Name"
+                                            onChange={(e) => setEditingData(prev => ({ ...prev, company: e.target.value }))}
+                                            className="w-auto bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500"
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        <div className="flex items-center gap-1 justify-center">
+                                            {editingData.logo && (
+                                                <img src={editingData.logo} alt="logo" className="w-6 h-6 rounded" />
+                                            )}
+                                            <input
+                                                type="text"
+                                                value={editingData.logo || ''}
+                                                onChange={(e) => setEditingData(prev => ({ ...prev, logo: e.target.value }))}
+                                                placeholder="Logo URL"
+                                                className="w-auto bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 text-xs"
+                                            />
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-2 text-xs">
+                                        <div className="flex gap-1">
+                                            <input
+                                                type="month"
+                                                value={normalizeToMonthInputValue(editingData.startDate || '')}
+                                                onChange={(e) => setEditingData(prev => ({ ...prev, startDate: e.target.value }))}
+                                                className="flex-1 bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500"
+                                            />
+                                            <span className="text-gray-500 px-1">—</span>
+                                            <input
+                                                type="month"
+                                                value={editingData.endDate === 'Present' ? '' : normalizeToMonthInputValue(editingData.endDate || '')}
+                                                onChange={(e) => setEditingData(prev => ({ ...prev, endDate: e.target.value }))}
+                                                disabled={editingData.endDate === 'Present'}
+                                                className="flex-1 bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 disabled:opacity-50"
+                                            />
+                                            <label className="flex items-center gap-1 text-xs text-gray-300">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={editingData.endDate === 'Present'}
+                                                    onChange={(e) => setEditingData(prev => ({ ...prev, endDate: e.target.checked ? 'Present' : '' }))}
+                                                    className="w-3 h-3"
+                                                />
+                                                <span className="whitespace-nowrap">Now</span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-2">
+                                        <textarea
+                                            value={editingData.description || ''}
+                                            onChange={(e) => setEditingData(prev => ({ ...prev, description: e.target.value }))}
+                                            className="w-full bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 text-xs min-h-[100px] min-w-[400px]"
+                                            placeholder="Description..."
+                                        />
+                                    </td>
+                                    <td className="px-4 py-2">
+                                        <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                                            {allCertifications.map(cert => (
+                                                <label key={cert.id} className="flex items-center gap-2 text-xs text-gray-200">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={editingCertificationIds.has(cert.id)}
+                                                        onChange={() => {
+                                                            setEditingCertificationIds(prev => {
+                                                                const next = new Set(prev);
+                                                                if (next.has(cert.id)) next.delete(cert.id);
+                                                                else next.add(cert.id);
+                                                                return next;
+                                                            });
+                                                        }}
+                                                        className="w-3 h-3"
+                                                    />
+                                                    <span className="truncate" title={cert.name}>{cert.name}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-2">
+                                        <div className="max-h-28 overflow-y-auto space-y-1 pr-1">
+                                            {allProjects.map(project => (
+                                                <label key={project.id} className="flex items-center gap-2 text-xs text-gray-200">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={editingProjectIds.has(project.id)}
+                                                        onChange={() => {
+                                                            setEditingProjectIds(prev => {
+                                                                const next = new Set(prev);
+                                                                if (next.has(project.id)) next.delete(project.id);
+                                                                else next.add(project.id);
+                                                                return next;
+                                                            });
+                                                        }}
+                                                        className="w-3 h-3"
+                                                    />
+                                                    <span className="truncate" title={project.title}>{project.title}</span>
+                                                </label>
+                                            ))}
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-2">
+                                        <div className="space-y-2">
+                                            {editingImages.map((img, idx) => (
+                                                <div key={img.id ?? idx} className="border border-gray-600 rounded-lg bg-gray-700/30 p-2 space-y-1">
+                                                    <div className="flex items-center justify-between gap-2">
+                                                        <span className="text-[11px] text-gray-300 whitespace-nowrap">Image {idx + 1}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setEditingImages(prev => prev.filter((_, i) => i !== idx))}
+                                                            className="text-red-400 hover:text-red-300 transition"
+                                                            title="Remove image"
+                                                        >
+                                                            <Trash className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+
+                                                    {img.imageUrl ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <img src={img.imageUrl} alt={`image-${idx + 1}`} className="w-10 h-10 rounded object-cover bg-gray-800 border border-gray-600" />
+                                                            <input
+                                                                type="text"
+                                                                value={img.imageUrl}
+                                                                onChange={(e) => {
+                                                                    const nextValue = e.target.value;
+                                                                    setEditingImages(prev => prev.map((it, i) => (i === idx ? { ...it, imageUrl: nextValue } : it)));
+                                                                }}
+                                                                placeholder="Image URL"
+                                                                className="flex-1 bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 text-xs"
+                                                            />
+                                                        </div>
+                                                    ) : (
+                                                        <input
+                                                            type="text"
+                                                            value={img.imageUrl}
+                                                            onChange={(e) => {
+                                                                const nextValue = e.target.value;
+                                                                setEditingImages(prev => prev.map((it, i) => (i === idx ? { ...it, imageUrl: nextValue } : it)));
+                                                            }}
+                                                            placeholder="Image URL"
+                                                            className="w-full bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 text-xs"
+                                                        />
+                                                    )}
+
+                                                    <input
+                                                        type="text"
+                                                        value={img.caption}
+                                                        onChange={(e) => {
+                                                            const nextCaption = e.target.value;
+                                                            setEditingImages(prev => prev.map((it, i) => (i === idx ? { ...it, caption: nextCaption } : it)));
+                                                        }}
+                                                        placeholder="Caption (optional)"
+                                                        className="w-full bg-gray-600 border border-gray-500 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500 text-xs"
+                                                    />
+
+                                                    <div className="flex items-center gap-2 pt-1">
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            className="hidden"
+                                                            ref={el => {
+                                                                fileInputRefs.current[idx] = el;
+                                                            }}
+                                                            onChange={(e) => {
+                                                                const f = e.target.files?.[0];
+                                                                if (f) void handleUploadExperienceImage(f, idx);
+                                                                e.target.value = '';
+                                                            }}
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => fileInputRefs.current[idx]?.click()}
+                                                            disabled={uploadingImageIndex !== null}
+                                                            className="flex items-center gap-1 px-2 py-1 bg-gray-700 hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed rounded text-xs text-white"
+                                                            title="Upload to Cloudinary"
+                                                        >
+                                                            {uploadingImageIndex === idx ? (
+                                                                <>
+                                                                    <Loader2 className="w-3 h-3 animate-spin" />
+                                                                    Uploading
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <Upload className="w-3 h-3" />
+                                                                    Upload
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            ))}
+
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditingImages(prev => [...prev, { imageUrl: '', caption: '' }])}
+                                                className="text-xs text-gray-300 hover:text-white transition"
+                                            >
+                                                + Add Image
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                        {/* Action placeholder for new row */}
+                                    </td>
+                                </tr>
+                            )}
                             {paginatedExperiences.map((exp, index) => (
                                 <tr key={exp.id} className="hover:bg-gray-700/50 transition">
                                     <td className="px-4 py-2 text-center">
